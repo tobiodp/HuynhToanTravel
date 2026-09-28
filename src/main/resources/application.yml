@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: HuynhToanTravel
+  config:
+    import: optional:classpath:application-local.yml
+  main:
+    allow-circular-references: true
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql-148f4d0d-thungo3011-4212.f.aivencloud.com:23095/ResourcesManagement?sslMode=REQUIRED}
+    username: ${DB_USERNAME:avnadmin}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    open-in-view: true
+    properties:
+      hibernate:
+        format_sql: true
+  thymeleaf:
+    cache: false
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:thungo3011@gmail.com}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+    include-binding-errors: always
+
+app:
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  admin-email: ${ADMIN_EMAIL:admin@huynhtoantravel.vn}
+  webhook:
+    casso-secret: ${CASSO_WEBHOOK_SECRET:change-me-casso}
+    sepay-secret: ${SEPAY_WEBHOOK_SECRET:change-me-sepay}
+  vietqr:
+    bank-id: ${VIETQR_BANK_ID:MB}
+    account-no: ${VIETQR_ACCOUNT_NO:0981892387}
+    account-name: ${VIETQR_ACCOUNT_NAME:NGO NGOC THU}
+    template: ${VIETQR_TEMPLATE:compact2}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+

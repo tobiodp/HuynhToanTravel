@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huynh Toan Travel | Đà Nẵng - Hội An</title>
+
+  <!-- Preload critical fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+
+  <!-- Design System CSS -->
+  <link rel="stylesheet" th:href="@{/css/design.css}">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #031f32; color: #fff; overflow-x: hidden; }
+
+    /* Stagger items */
+    [data-stagger-item] {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.6s var(--ease-expo), transform 0.6s var(--ease-expo);
+    }
+    [data-stagger-item].stagger-visible { opacity: 1; transform: none; }
+
+    /* Footer */
+    footer { background: #010d18; border-top: 1px solid rgba(255,255,255,0.06); }
+    .footer-link { color: rgba(255,255,255,0.5); font-size: 0.875rem; transition: color 0.25s; }
+    .footer-link:hover { color: var(--gold); }
+
+    /* About section images */
+    .about-img-grid img { transition: transform 0.7s var(--ease-expo), box-shadow 0.4s; }
+    .about-img-grid img:hover { transform: scale(1.03); box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+
+    /* Testimonial card */
+    .review-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 28px;
+      transition: all 0.4s var(--ease-expo);
+    }
+    .review-card:hover { background: rgba(255,255,255,0.07); transform: translateY(-6px); }
+  </style>
+</head>
+<body>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress"></div>
+
+<!-- ────────────────────── HEADER ────────────────────── -->
+<header class="site-header" style="padding:20px 0">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-6">
+    <!-- Logo -->
+    <a href="/" class="header-logo font-black tracking-wide text-xl flex items-center gap-2">
+      <span class="text-gradient-gold">HUYNH TOAN</span>
+      <span class="text-white/90">TRAVEL</span>
+    </a>
+
+    <!-- Desktop Nav -->
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="/booking/vehicle" class="nav-link">Đặt Xe</a>
+      <a href="/tickets" class="nav-link">Vé Tham Quan</a>
+      <a href="/hotels" class="nav-link">Khách Sạn</a>
+    </nav>
+
+    <!-- CTA Row -->
+    <div class="hidden md:flex items-center gap-3">
+      <div th:if="${isLoggedIn}" class="flex items-center gap-3">
+        <a th:if="${isAdmin}" href="/admin" class="nav-link text-amber-400 font-bold flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/30 px-3.5 py-1.5 rounded-xl hover:bg-amber-400/20 transition">
+          <span>👑</span> Trang Quản Trị
+        </a>
+        <span class="text-xs font-semibold text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span th:text="${currentUserEmail}">user@gmail.com</span>
+        </span>
+        <form th:action="@{/logout}" method="post" class="inline">
+          <button type="submit" class="text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl hover:bg-rose-500/20 transition">Đăng xuất</button>
+        </form>
+      </div>
+      <div th:if="${!isLoggedIn}" class="flex items-center gap-4">
+        <a href="/register" class="text-xs font-bold text-slate-300 hover:text-amber-400 transition">Đăng ký</a>
+        <a href="/login" class="btn-cta btn-cta-glass py-2 px-4 text-sm">
+          <span class="shine-sweep"></span>
+          Đăng nhập
+        </a>
+      </div>
+    </div>
+
+    <!-- Hamburger -->
+    <button class="mobile-nav-toggle md:hidden flex flex-col gap-1.5 p-2" aria-label="Menu">
+      <span class="block w-6 h-0.5 bg-white rounded"></span>
+      <span class="block w-4 h-0.5 bg-white rounded"></span>
+      <span class="block w-6 h-0.5 bg-white rounded"></span>
+    </button>
+  </div>
+</header>
+
+<!-- Mobile Nav Drawer -->
+<div class="mobile-nav">
+  <div class="mobile-nav-backdrop"></div>
+  <div class="mobile-nav-drawer">
+    <nav class="flex flex-col gap-6">
+      <a href="/booking/vehicle" class="text-white font-bold text-xl hover:text-amber-400 transition">Đặt Xe</a>
+      <a href="/tickets" class="text-white font-bold text-xl hover:text-amber-400 transition">Vé Tham Quan</a>
+      <a href="/hotels" class="text-white font-bold text-xl hover:text-amber-400 transition">Khách Sạn</a>
+    </nav>
+    <div class="mt-10 pt-6 border-t border-white/10">
+      <div th:if="${isLoggedIn}" class="space-y-4">
+        <a th:if="${isAdmin}" href="/admin" class="btn-cta btn-cta-gold w-full justify-center text-sm py-3">
+          👑 Trang Quản Trị
+        </a>
+        <div class="text-xs text-slate-400 text-center" th:text="${currentUserEmail}"></div>
+        <form th:action="@{/logout}" method="post">
+          <button type="submit" class="w-full py-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 font-bold text-sm hover:bg-rose-500/25 transition">Đăng xuất</button>
+        </form>
+      </div>
+      <div th:if="${!isLoggedIn}">
+        <a href="/login" class="btn-cta btn-cta-gold w-full justify-center">
+          <span class="shine-sweep"></span>
+          Đăng nhập
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────── HERO ────────────────────── -->
+<section class="hero-shell">
+  <div class="swiper hero-swiper">
+    <div class="swiper-wrapper">
+
+      <!-- Slide 1: Đặt Xe -->
+      <article class="swiper-slide hero-slide">
+        <div class="absolute inset-0 mesh-gradient"></div>
+        <div class="hero-noise"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#031f32]/90 via-[#031f32]/40 to-transparent"></div>
+
+        <!-- Decorative floaters -->
+        <div class="hero-plane parallax-layer" data-parallax-speed="1.2">✈</div>
+        <div class="hero-cloud-a parallax-layer" data-parallax-speed="0.7">☁</div>
+        <div class="hero-cloud-b parallax-layer" data-parallax-speed="0.4">☁</div>
+
+        <div class="relative z-10 mx-auto w-full max-w-7xl px-6 grid lg:grid-cols-12 items-center gap-10 pt-32 pb-48">
+          <div class="lg:col-span-7 hero-slide-content">
+            <div class="hero-eyebrow">
+              <span>★</span>
+              CHUYÊN TUYẾN ĐÀ NẴNG ↔ HỘI AN
+            </div>
+            <h1 class="hero-title mt-5">
+              ĐẶT XE TIẾT KIỆM<br>
+              <span class="accent">GIẢM ĐẾN 20%</span>
+            </h1>
+            <p class="hero-subtitle mt-5 max-w-xl text-lg text-slate-200 leading-relaxed">
+              Xe đời mới • Đón đúng giờ • Tài xế kinh nghiệm<br>Hỗ trợ chuyến bay và thay đổi lịch linh hoạt.
+            </p>
+            <div class="hero-ctas mt-8 flex flex-wrap gap-4">
+              <a href="/booking/vehicle" class="btn-cta btn-cta-gold">
+                <span class="shine-sweep"></span>
+                Đặt xe ngay →
+              </a>
+              <a href="#services" class="btn-cta btn-cta-glass">
+                <span class="shine-sweep"></span>
+                Xem dịch vụ
+              </a>
+            </div>
+            <div class="mt-8 flex flex-wrap gap-5 text-sm text-slate-300">
+              <span class="flex items-center gap-1.5"><span class="text-amber-400">✓</span> Sedan 4 chỗ</span>
+              <span class="flex items-center gap-1.5"><span class="text-amber-400">✓</span> SUV 7 chỗ</span>
+              <span class="flex items-center gap-1.5"><span class="text-amber-400">✓</span> Van 16 chỗ</span>
+            </div>
+          </div>
+
+          <!-- Vehicle Card Stack -->
+          <div class="relative hidden lg:block lg:col-span-5 h-[400px] parallax-layer" data-parallax-speed="0.6">
+            <div class="v-card-stack">
+              <div class="discount-badge"><b>-20%</b><span>ĐẶT SỚM</span></div>
+              <div class="v-card v-card-back">🚐 16 CHỖ VAN</div>
+              <div class="v-card v-card-mid">🚙 7 CHỖ SUV/MPV</div>
+              <div class="v-card v-card-front">🚗 SEDAN 4 CHỖ</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Slide 2: Bà Nà Hills -->
+      <article class="swiper-slide hero-slide">
+        <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,31,50,.92),rgba(3,31,50,.48),rgba(3,31,50,.1)),url('https://images.unsplash.com/photo-1606298855672-3efb63017be8?auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center"></div>
+        <div class="hero-noise"></div>
+        <div class="relative z-10 mx-auto w-full max-w-7xl px-6 flex items-center pt-32 pb-48">
+          <div class="max-w-3xl hero-slide-content">
+            <div class="hero-eyebrow"><span>🌟</span> SUN WORLD BÀ NÀ HILLS</div>
+            <h2 class="hero-title mt-5">VÉ CÁP TREO & BUFFET<br><span class="accent">QR TỨC THÌ</span></h2>
+            <p class="hero-subtitle mt-5 text-lg text-slate-200">Cầu Vàng • Lâu đài Mặt Trăng • Cáp treo xuyên mây.<br>Vé người lớn, trẻ em, buffet và ưu đãi địa phương.</p>
+            <div class="hero-ctas mt-8 flex flex-wrap gap-4">
+              <a href="/tickets" class="btn-cta btn-cta-gold"><span class="shine-sweep"></span>Đặt vé Bà Nà →</a>
+              <a href="/tickets" class="btn-cta btn-cta-glass"><span class="shine-sweep"></span>Xem giá</a>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Slide 3: Ký Ức Hội An -->
+      <article class="swiper-slide hero-slide">
+        <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,9,35,.94),rgba(18,9,35,.50),rgba(18,9,35,.18)),url('https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center"></div>
+        <div class="hero-noise"></div>
+        <div class="relative z-10 mx-auto w-full max-w-7xl px-6 flex items-center pt-32 pb-48">
+          <div class="max-w-3xl hero-slide-content">
+            <div class="hero-eyebrow"><span>🏮</span> KÝ ỨC HỘI AN × NGHỈ DƯỠNG</div>
+            <h2 class="hero-title mt-5">TRỌN GÓI VÉ SHOW &<br><span class="accent">PHÒNG RESORT</span></h2>
+            <p class="hero-subtitle mt-5 text-lg text-slate-200">Một hành trình từ phố đèn lồng đến biển An Bàng:<br>vé show, khách sạn, xe đưa đón trong cùng một đơn hàng.</p>
+            <div class="hero-ctas mt-8 flex flex-wrap gap-4">
+              <a href="/hotels" class="btn-cta btn-cta-gold"><span class="shine-sweep"></span>Khám phá combo →</a>
+              <a href="/hotels" class="btn-cta btn-cta-glass"><span class="shine-sweep"></span>Xem khách sạn</a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Navigation -->
+    <button class="hero-nav-prev swiper-button-prev hero-nav"></button>
+    <button class="hero-nav-next swiper-button-next hero-nav"></button>
+    <div class="hero-pg swiper-pagination" style="bottom:100px;left:50%;transform:translateX(-50%)"></div>
+  </div>
+</section>
+
+<!-- ────────────────────── QUICK SEARCH (FLOATING & INTERACTIVE) ────────────────────── -->
+<section class="relative z-30 -mt-14 md:-mt-20 mx-auto w-full max-w-5xl px-4 sm:px-6" id="quickSearchSection">
+  <div class="quick-search shadow-2xl">
+    <div class="qs-tabs">
+      <button class="qs-tab active" data-target="vehicle">🚗 Đặt Xe Tuyến</button>
+      <button class="qs-tab" data-target="hotel">🏨 Đặt Phòng Khách Sạn</button>
+      <button class="qs-tab" data-target="bana">🚠 Vé Bà Nà Hills</button>
+      <button class="qs-tab" data-target="hoian">🏮 Ký Ức Hội An</button>
+    </div>
+
+    <!-- 1. VEHICLE PANEL -->
+    <div class="qs-panel active" data-panel="vehicle">
+      <div class="qs-field">
+        <label for="qsRoute" class="qs-label">Tuyến Đón Tiễn</label>
+        <select id="qsRoute" class="qs-select font-bold">
+          <option value="DAD_HOIAN" selected>Sân bay Đà Nẵng ↔ Hội An</option>
+          <option value="DAD_BANA">Đà Nẵng ↔ Bà Nà Hills</option>
+          <option value="DAD_VINWONDERS">Đà Nẵng ↔ VinWonders</option>
+          <option value="DAD_HUE">Đà Nẵng ↔ Cố Đô Huế</option>
+          <option value="DAD_MYSON">Đà Nẵng ↔ Thánh Địa Mỹ Sơn</option>
+          <option value="DAD_SONTRA">Đà Nẵng ↔ Bán Đảo Sơn Trà</option>
+          <option value="DAD_CITY">Sân bay ↔ Khách sạn Nội thành</option>
+        </select>
+      </div>
+      <div class="qs-field">
+        <label for="qsVehicle" class="qs-label">Dòng Xe</label>
+        <select id="qsVehicle" class="qs-select font-bold">
+          <option value="SEDAN_4">Sedan 4 Chỗ</option>
+          <option value="SUV_7">SUV/MPV 7 Chỗ</option>
+          <option value="VAN_16">Van 16 Chỗ</option>
+        </select>
+      </div>
+      <div class="qs-field">
+        <label for="qsTrip" class="qs-label">Loại Chuyến</label>
+        <select id="qsTrip" class="qs-select font-bold">
+          <option value="ONE_WAY">Một Chiều ➔</option>
+          <option value="ROUND_TRIP">Hai Chiều ⇄</option>
+        </select>
+      </div>
+      <button type="button" onclick="goToQuickVehicle()" class="qs-search-btn">Tìm xe ngay →</button>
+    </div>
+
+    <!-- 2. HOTEL PANEL (KHÁCH SẠN & RESORT) -->
+    <div class="qs-panel" data-panel="hotel">
+      <div class="qs-field">
+        <label for="qsHotelArea" class="qs-label">Khu Vực Nghỉ Dưỡng</label>
+        <select id="qsHotelArea" class="qs-select font-bold">
+          <option value="">Tất cả khu vực</option>
+          <option value="Biển Mỹ Khê" selected>Biển Mỹ Khê (Đà Nẵng)</option>
+          <option value="Phố Cổ Hội An">Phố Cổ Hội An</option>
+          <option value="Bán đảo Sơn Trà">Bán đảo Sơn Trà</option>
+          <option value="Biển Non Nước">Biển Non Nước</option>
+          <option value="Ven sông Thu Bồn">Ven sông Thu Bồn (Hội An)</option>
+          <option value="An Bàng">Biển An Bàng</option>
+          <option value="Trung tâm Đà Nẵng">Trung tâm Đà Nẵng</option>
+          <option value="Ngoại ô Hội An">Ngoại ô Hội An</option>
+        </select>
+      </div>
+      <div class="qs-field">
+        <label for="qsHotelCheckIn" class="qs-label">Ngày Check-In</label>
+        <input type="date" id="qsHotelCheckIn" class="qs-input font-bold">
+      </div>
+      <div class="qs-field">
+        <label for="qsHotelCheckOut" class="qs-label">Ngày Check-Out</label>
+        <input type="date" id="qsHotelCheckOut" class="qs-input font-bold">
+      </div>
+      <button type="button" onclick="goToQuickHotel()" class="qs-search-btn">Tìm phòng →</button>
+    </div>
+
+    <!-- 3. BANA HILLS PANEL -->
+    <div class="qs-panel" data-panel="bana">
+      <div class="qs-field">
+        <label for="qsBanaDate" class="qs-label">Ngày Đi Bà Nà</label>
+        <input type="date" id="qsBanaDate" class="qs-input font-bold">
+      </div>
+      <div class="qs-field">
+        <label for="qsBanaTicket" class="qs-label">Loại Vé</label>
+        <select id="qsBanaTicket" class="qs-select font-bold">
+          <option value="BANA_ADULT">Cáp Treo Người Lớn</option>
+          <option value="BANA_CHILD">Cáp Treo Trẻ Em</option>
+          <option value="BANA_BUFFET_ADULT">Combo Cáp + Buffet Trưa</option>
+        </select>
+      </div>
+      <div class="qs-field">
+        <label for="qsBanaType" class="qs-label">Chính Sách</label>
+        <select id="qsBanaType" class="qs-select font-bold">
+          <option value="standard">Khách Ngoại Tỉnh</option>
+          <option value="local">Ưu Đãi Đà Nẵng / Quảng Nam</option>
+        </select>
+      </div>
+      <a href="/tickets" class="qs-search-btn">Đặt vé Bà Nà →</a>
+    </div>
+
+    <!-- 4. HOI AN MEMORIES SHOW PANEL -->
+    <div class="qs-panel" data-panel="hoian">
+      <div class="qs-field">
+        <label for="qsHoianDate" class="qs-label">Ngày Xem Show</label>
+        <input type="date" id="qsHoianDate" class="qs-input font-bold">
+      </div>
+      <div class="qs-field">
+        <label for="qsHoianSeat" class="qs-label">Hạng Ghế</label>
+        <select id="qsHoianSeat" class="qs-select font-bold">
+          <option value="HOIAN_ECO">Hạng Eco (Hàng thường)</option>
+          <option value="HOIAN_VIP">Hạng VIP (Ghế đẹp nhất)</option>
+        </select>
+      </div>
+      <div class="qs-field">
+        <label for="qsHoianCombo" class="qs-label">Gói Dịch Vụ</label>
+        <select id="qsHoianCombo" class="qs-select font-bold">
+          <option value="show">Vé xem Show diễn</option>
+          <option value="combo">Show + Công viên Ấn Tượng</option>
+        </select>
+      </div>
+      <a href="/tickets" class="qs-search-btn">Chọn vé Show →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────── SERVICES ────────────────────── -->
+<section id="services" class="mx-auto max-w-7xl px-6 pt-20 md:pt-28 pb-24">
+  <div class="text-center mb-14" data-aos="fade-up">
+    <div class="section-label">Dịch vụ nổi bật</div>
+    <h2 class="section-heading mt-4">Một điểm đặt,<br>trọn vẹn hành trình</h2>
+  </div>
+
+  <div class="grid gap-6 md:grid-cols-3" data-stagger-group>
+    <!-- Service 1 -->
+    <div class="service-card" data-tilt data-stagger-item>
+      <div class="shimmer-line"></div>
+      <div class="service-num">01</div>
+      <div class="service-icon-wrap">🚗</div>
+      <h3 class="text-xl font-black text-white">Đặt xe tuyến</h3>
+      <p class="mt-3 text-slate-400 leading-relaxed">Sân bay Đà Nẵng ↔ Hội An, Bà Nà Hills. Sedan 4 chỗ đến Van 16 chỗ. Đón đúng giờ, cố định giá.</p>
+      <a href="/booking/vehicle" class="btn-cta btn-cta-gold mt-6 w-full justify-center text-sm py-3 px-5">
+        <span class="shine-sweep"></span>Đặt xe ngay
+      </a>
+    </div>
+
+    <!-- Service 2 -->
+    <div class="service-card" data-tilt data-stagger-item>
+      <div class="shimmer-line"></div>
+      <div class="service-num">02</div>
+      <div class="service-icon-wrap">🎟</div>
+      <h3 class="text-xl font-black text-white">Vé & trải nghiệm</h3>
+      <p class="mt-3 text-slate-400 leading-relaxed">Bà Nà Hills, Buffet, Ký Ức Hội An. Xuất vé QR tức thì, giá ưu đãi cho khách địa phương.</p>
+      <a href="/tickets" class="btn-cta btn-cta-gold mt-6 w-full justify-center text-sm py-3 px-5">
+        <span class="shine-sweep"></span>Mua vé ngay
+      </a>
+    </div>
+
+    <!-- Service 3 -->
+    <div class="service-card" data-tilt data-stagger-item>
+      <div class="shimmer-line"></div>
+      <div class="service-num">03</div>
+      <div class="service-icon-wrap">🏨</div>
+      <h3 class="text-xl font-black text-white">Khách sạn</h3>
+      <p class="mt-3 text-slate-400 leading-relaxed">Bản đồ trực quan, kiểm phòng chống overbooking. Từ bình dân đến 5 sao tại Mỹ Khê & Hội An.</p>
+      <a href="/hotels" class="btn-cta btn-cta-gold mt-6 w-full justify-center text-sm py-3 px-5">
+        <span class="shine-sweep"></span>Tìm phòng
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────── COUNTERS ────────────────────── -->
+<section class="py-20 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-r from-[#031f32] via-[#0c2540] to-[#031f32]"></div>
+  <div class="absolute inset-0 opacity-30" style="background-image:radial-gradient(rgba(245,158,11,0.3) 1px, transparent 1px); background-size: 40px 40px;"></div>
+  <div class="relative mx-auto max-w-7xl px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div data-aos="zoom-in-up" data-aos-delay="0">
+        <div class="counter-val" data-counter="10000" data-suffix="+">0</div>
+        <div class="mt-2 text-sm text-slate-400 font-semibold">Chuyến xe an toàn</div>
+      </div>
+      <div data-aos="zoom-in-up" data-aos-delay="100">
+        <div class="counter-val" data-counter="5000" data-suffix="+">0</div>
+        <div class="mt-2 text-sm text-slate-400 font-semibold">Vé đã bán</div>
+      </div>
+      <div data-aos="zoom-in-up" data-aos-delay="200">
+        <div class="counter-val" data-counter="98" data-suffix="%">0</div>
+        <div class="mt-2 text-sm text-slate-400 font-semibold">Khách hài lòng</div>
+      </div>
+      <div data-aos="zoom-in-up" data-aos-delay="300">
+        <div class="counter-val" data-counter="5" data-suffix="+ năm">0</div>
+        <div class="mt-2 text-sm text-slate-400 font-semibold">Kinh nghiệm</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────── ABOUT ────────────────────── -->
+<section class="mx-auto max-w-7xl px-6 py-24">
+  <div class="grid gap-14 lg:grid-cols-2 items-center">
+    <div data-aos="fade-up">
+      <div class="section-label">Về Huỳnh Toàn Travel</div>
+      <h2 class="section-heading mt-4">Đồng hành cùng bạn<br>trên mọi nẻo đường</h2>
+      <p class="mt-6 text-slate-300 leading-relaxed text-lg">
+        Huỳnh Toàn Travel là đơn vị lữ hành uy tín hàng đầu tại Đà Nẵng và Hội An. Chúng tôi chuyên cung cấp giải pháp du lịch toàn diện — từ xe đưa đón sân bay, vé tham quan Bà Nà Hills, Ký Ức Hội An, đến đặt phòng khách sạn từ bình dân đến 5 sao.
+      </p>
+      <p class="mt-4 text-slate-400 leading-relaxed">
+        Với đội ngũ tài xế bản địa giàu kinh nghiệm và dịch vụ hỗ trợ khách hàng 24/7, chúng tôi cam kết mang đến những chuyến đi an toàn và trải nghiệm trọn vẹn nhất tại miền Trung.
+      </p>
+      <div class="mt-10 grid grid-cols-3 gap-6 border-t border-white/10 pt-8">
+        <div>
+          <div class="counter-val text-3xl" data-counter="5" data-suffix="+">5+</div>
+          <div class="mt-1 text-sm text-slate-400">Năm kinh nghiệm</div>
+        </div>
+        <div>
+          <div class="counter-val text-3xl" data-counter="10" data-suffix="K+">10K+</div>
+          <div class="mt-1 text-sm text-slate-400">Khách tin chọn</div>
+        </div>
+        <div>
+          <div class="text-3xl font-black text-gradient-gold">24/7</div>
+          <div class="mt-1 text-sm text-slate-400">Hỗ trợ nhiệt tình</div>
+        </div>
+      </div>
+      <div class="mt-8">
+        <a href="/hotels" class="btn-cta btn-cta-gold">
+          <span class="shine-sweep"></span>
+          Khám phá ngay →
+        </a>
+      </div>
+    </div>
+
+    <div class="about-img-grid relative" data-aos="fade-up" data-aos-delay="150">
+      <div class="absolute -inset-8 bg-gradient-to-r from-amber-500/15 to-blue-500/15 blur-3xl rounded-full -z-10"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <img src="https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=600&q=80"
+             alt="Hội An" class="rounded-2xl object-cover h-[260px] w-full shadow-xl">
+        <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80"
+             alt="Đà Nẵng" class="rounded-2xl object-cover h-[260px] w-full shadow-xl mt-12">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────── REVIEWS ────────────────────── -->
+<section class="py-24 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-b from-[#031f32] to-[#050e1c]"></div>
+  <div class="relative mx-auto max-w-7xl px-6">
+    <div class="text-center mb-14" data-aos="fade-up">
+      <div class="section-label">Đánh giá từ khách hàng</div>
+      <h2 class="section-heading mt-4">Họ nói gì về chúng tôi</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6" data-stagger-group>
+      <div class="review-card" data-stagger-item>
+        <div class="flex gap-1 text-amber-400 mb-4">★★★★★</div>
+        <p class="text-slate-300 leading-relaxed text-sm">"Đặt xe từ sân bay Đà Nẵng về Hội An, tài xế đến đúng giờ và rất thân thiện. Xe sạch, máy lạnh mát, giá cố định không bị chặt chém. Sẽ dùng lại lần sau!"</p>
+        <div class="mt-5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center font-black text-sm text-white">M</div>
+          <div><div class="font-bold text-sm text-white">Minh Tuấn</div><div class="text-xs text-slate-500">Hà Nội · Tháng 8/2025</div></div>
+        </div>
+      </div>
+      <div class="review-card" data-stagger-item>
+        <div class="flex gap-1 text-amber-400 mb-4">★★★★★</div>
+        <p class="text-slate-300 leading-relaxed text-sm">"Mua vé Bà Nà Hills online, QR về ngay tức thì. Lên cổng quét là vào được luôn, không cần xếp hàng. Giá địa phương cũng được áp dụng đúng, rất hài lòng!"</p>
+        <div class="mt-5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center font-black text-sm text-white">L</div>
+          <div><div class="font-bold text-sm text-white">Lan Hương</div><div class="text-xs text-slate-500">Đà Nẵng · Tháng 7/2025</div></div>
+        </div>
+      </div>
+      <div class="review-card" data-stagger-item>
+        <div class="flex gap-1 text-amber-400 mb-4">★★★★★</div>
+        <p class="text-slate-300 leading-relaxed text-sm">"Đặt phòng Furama qua Huynh Toan Travel, giá tốt, hỗ trợ nhanh và check-in không phát sinh phí nào thêm. Bản đồ trên web chỉ đường rất rõ, đặt xong có thể xem vị trí ngay."</p>
+        <div class="mt-5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center font-black text-sm text-white">A</div>
+          <div><div class="font-bold text-sm text-white">An Khoa</div><div class="text-xs text-slate-500">TP.HCM · Tháng 9/2025</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────── CTA BANNER ────────────────────── -->
+<section class="mx-auto max-w-7xl px-6 py-16" data-aos="zoom-in-up">
+  <div class="relative overflow-hidden rounded-3xl mesh-gradient p-12 md:p-16 text-center">
+    <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px); background-size:32px 32px;"></div>
+    <div class="relative z-10">
+      <h2 class="text-3xl md:text-5xl font-black">Sẵn sàng cho chuyến đi tiếp theo?</h2>
+      <p class="mt-4 text-slate-300 text-lg">Đặt trước 48 tiếng để nhận ưu đãi giảm 10%</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a href="/booking/vehicle" class="btn-cta btn-cta-gold">
+          <span class="shine-sweep"></span>
+          Đặt ngay hôm nay →
+        </a>
+        <a href="/hotels" class="btn-cta btn-cta-glass">
+          <span class="shine-sweep"></span>
+          Xem khách sạn
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────── FOOTER ────────────────────── -->
+<footer class="py-16">
+  <div class="mx-auto max-w-7xl px-6">
+    <div class="grid md:grid-cols-4 gap-10 mb-12">
+      <div>
+        <div class="font-black text-lg text-gradient-gold mb-4">HUYNH TOAN TRAVEL</div>
+        <p class="text-slate-500 text-sm leading-relaxed">Đơn vị lữ hành uy tín tại Đà Nẵng – Hội An. Xe đưa đón, vé tham quan, khách sạn.</p>
+      </div>
+      <div>
+        <div class="font-bold text-white mb-4 text-sm">Dịch vụ</div>
+        <nav class="flex flex-col gap-2">
+          <a href="/booking/vehicle" class="footer-link">Đặt xe tuyến</a>
+          <a href="/tickets" class="footer-link">Vé Bà Nà Hills</a>
+          <a href="/tickets" class="footer-link">Vé Ký Ức Hội An</a>
+          <a href="/hotels" class="footer-link">Đặt phòng khách sạn</a>
+        </nav>
+      </div>
+      <div>
+        <div class="font-bold text-white mb-4 text-sm">Tài khoản</div>
+        <nav class="flex flex-col gap-2">
+          <a href="/login" class="footer-link">Đăng nhập</a>
+          <a href="/register" class="footer-link">Đăng ký tài khoản</a>
+        </nav>
+      </div>
+      <div>
+        <div class="font-bold text-white mb-4 text-sm">Liên hệ</div>
+        <div class="space-y-2 text-sm text-slate-500">
+          <p>📍 Đà Nẵng, Việt Nam</p>
+          <p>📞 0905 xxx xxx</p>
+          <p>✉ hello@huynhtoan.vn</p>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-white/05 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-600">
+      <span>© 2025 Huỳnh Toàn Travel. All rights reserved.</span>
+      <div class="flex gap-6">
+        <a href="#" class="footer-link">Chính sách bảo mật</a>
+        <a href="#" class="footer-link">Điều khoản sử dụng</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ────────────────────── SCRIPTS ────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.32/bundled/lenis.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+<script>
+function goToQuickVehicle() {
+    const route = document.getElementById('qsRoute')?.value || 'DAD_HOIAN';
+    const vehicle = document.getElementById('qsVehicle')?.value || 'SEDAN_4';
+    const trip = document.getElementById('qsTrip')?.value || 'ONE_WAY';
+    window.location.href = `/booking/vehicle?route=${encodeURIComponent(route)}&vehicle=${encodeURIComponent(vehicle)}&trip=${encodeURIComponent(trip)}`;
+}
+
+function goToQuickHotel() {
+    const area = document.getElementById('qsHotelArea')?.value || '';
+    const checkIn = document.getElementById('qsHotelCheckIn')?.value || '';
+    const checkOut = document.getElementById('qsHotelCheckOut')?.value || '';
+    const p = new URLSearchParams();
+    if (area) p.set('area', area);
+    if (checkIn) p.set('checkIn', checkIn);
+    if (checkOut) p.set('checkOut', checkOut);
+    window.location.href = '/hotels' + (p.toString() ? '?' + p.toString() : '');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const tmr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const elIn = document.getElementById('qsHotelCheckIn');
+    const elOut = document.getElementById('qsHotelCheckOut');
+    const elBana = document.getElementById('qsBanaDate');
+    const elHoian = document.getElementById('qsHoianDate');
+    if (elIn) { elIn.value = today; elIn.min = today; }
+    if (elOut) { elOut.value = tmr; elOut.min = today; }
+    if (elBana) { elBana.value = today; elBana.min = today; }
+    if (elHoian) { elHoian.value = today; elHoian.min = today; }
+});
+</script>
+</body>
+</html>

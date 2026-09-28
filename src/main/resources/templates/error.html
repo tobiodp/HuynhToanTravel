@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thông báo lỗi | Huynh Toan Travel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #031f32; color: #fff; min-height: 100vh; }
+    </style>
+</head>
+<body class="flex flex-col justify-between">
+<header class="py-6 px-8 border-b border-white/5">
+    <div class="mx-auto flex max-w-6xl items-center justify-between">
+        <a href="/" class="font-black text-xl flex items-center gap-2">
+            <span class="text-gradient-gold">HUYNH TOAN</span>
+            <span class="text-white/90">TRAVEL</span>
+        </a>
+        <a href="/" class="text-sm font-bold text-slate-400 hover:text-amber-400 transition">← VỀ TRANG CHỦ</a>
+    </div>
+</header>
+
+<main class="mx-auto max-w-2xl px-6 py-20 text-center my-auto">
+    <div class="relative bg-white/5 border border-white/10 rounded-3xl p-10 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="w-20 h-20 bg-amber-400/15 border border-amber-400/30 text-amber-400 rounded-3xl flex items-center justify-center mx-auto mb-6 text-3xl shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            <span>⚠️</span>
+        </div>
+
+        <div class="text-xs font-black uppercase tracking-widest text-amber-400 mb-2" th:text="${status != null ? 'Mã lỗi: ' + status : 'Có lỗi phát sinh'}">LỖI HỆ THỐNG</div>
+        
+        <h1 class="text-3xl font-black text-white mb-4" th:text="${error != null ? error : 'Đã có lỗi xảy ra'}">Không thể xử lý yêu cầu</h1>
+        
+        <p class="text-slate-300 text-sm leading-relaxed mb-8 max-w-md mx-auto" th:text="${message != null ? message : 'Rất tiếc, đã có sự cố trong quá trình xử lý. Hãy kiểm tra lại thao tác hoặc quay lại trang chủ.'}">
+            Hệ thống không tìm thấy tài nguyên yêu cầu hoặc phiên làm việc của bạn đã hết hạn.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="/" class="btn-cta btn-cta-gold py-3.5 px-6 text-sm justify-center">
+                <span class="shine-sweep"></span>Về Trang Chủ
+            </a>
+            <a href="javascript:history.back()" class="btn-cta btn-cta-glass py-3.5 px-6 text-sm justify-center">
+                Quay Lại Bước Trước
+            </a>
+        </div>
+    </div>
+</main>
+
+<footer class="py-6 text-center text-xs text-slate-500 border-t border-white/5">
+    &copy; 2026 Huynh Toan Travel. All rights reserved.
+</footer>
+</body>
+</html>

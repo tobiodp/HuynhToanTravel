@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <title>Admin Dashboard | Huynh Toan Travel</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #020c14; color: #fff; overflow: hidden; }
+        .glass-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(24px); }
+        .table-row-hover:hover { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="flex h-screen font-sans">
+    
+    <!-- Sidebar -->
+    <aside class="w-72 bg-[#01060a] border-r border-white/5 flex-col hidden md:flex z-20">
+        <div class="h-20 flex items-center px-8 border-b border-white/5">
+            <a href="/" class="font-black text-xl flex items-center gap-2">
+                <span class="text-gradient-gold">HUYNH TOAN</span>
+                <span class="text-white/90 text-sm mt-0.5">ADMIN</span>
+            </a>
+        </div>
+        
+        <div class="p-6">
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">MENU CHÍNH</div>
+            <nav class="space-y-3">
+                <button type="button" onclick="switchTab('bookings')" id="btnTabBookings" class="w-full flex items-center px-5 py-3.5 bg-amber-400/10 text-amber-400 font-bold rounded-2xl border border-amber-400/20 shadow-[0_0_15px_rgba(245,158,11,0.1)] transition text-left">
+                    <svg class="w-5 h-5 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    Quản Lý Đơn Hàng
+                </button>
+                <button type="button" onclick="switchTab('routes')" id="btnTabRoutes" class="w-full flex items-center px-5 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 font-semibold rounded-2xl transition text-left">
+                    <svg class="w-5 h-5 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+                    Quản Lý Tuyến Xe
+                </button>
+                <a href="/" class="flex items-center px-5 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 font-semibold rounded-2xl transition">
+                    <svg class="w-5 h-5 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Về Trang Khách
+                </a>
+            </nav>
+        </div>
+        
+        <div class="mt-auto p-6 border-t border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center font-black text-slate-900">A</div>
+                <div>
+                    <div class="text-sm font-bold text-white" th:text="${adminEmail != null ? adminEmail : 'Admin User'}">Admin User</div>
+                    <div class="text-xs text-slate-400 font-medium">Quản trị viên</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900/40 via-[#020c14] to-[#020c14]">
+        
+        <!-- Header -->
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-8 z-10 glass-panel">
+            <h1 id="pageTitle" class="text-2xl font-black text-white">Quản lý Đơn hàng</h1>
+            <div class="flex items-center gap-4">
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="text-sm font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-4 py-2 rounded-xl transition">Đăng xuất</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-auto p-8 relative z-0">
+            
+            <div th:if="${message}" class="mb-8 p-4 rounded-2xl bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 flex items-center gap-3 shadow-lg shadow-emerald-500/5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <span th:text="${message}"></span>
+            </div>
+
+            <!-- TAB 1: BOOKINGS -->
+            <div id="sectionBookings">
+                <!-- Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <div class="glass-panel p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/20 rounded-full blur-2xl group-hover:bg-amber-500/30 transition duration-500"></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Tổng Doanh Thu</p>
+                        <p class="mt-3 text-4xl font-black text-gradient-gold drop-shadow-md" th:text="${#numbers.formatInteger(totalRevenue,3,'POINT') + ' ₫'}">0 ₫</p>
+                        <p class="mt-2 text-xs text-slate-500 font-medium">Thực thu từ đơn hoàn thành & cọc</p>
+                    </div>
+                    
+                    <div class="glass-panel p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition duration-500"></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Tổng Đơn Hàng</p>
+                        <p class="mt-3 text-4xl font-black text-white" th:text="${totalBookings}">0</p>
+                        <p class="mt-2 text-xs text-slate-500 font-medium">Toàn hệ thống</p>
+                    </div>
+                    
+                    <div class="glass-panel p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition duration-500"></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Đã Thanh Toán</p>
+                        <p class="mt-3 text-4xl font-black text-emerald-400" th:text="${depositedCount + paidCount}">0</p>
+                        <p class="mt-2 text-xs text-slate-500 font-medium">Cọc hoặc thanh toán toàn bộ</p>
+                    </div>
+                    
+                    <div class="glass-panel p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition duration-500"></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Chờ Xử Lý</p>
+                        <p class="mt-3 text-4xl font-black text-rose-400" th:text="${pendingCount}">0</p>
+                        <p class="mt-2 text-xs text-slate-500 font-medium">Đơn chưa thanh toán</p>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="glass-panel rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between">
+                        <h2 class="font-black text-xl text-white">Danh sách đơn hàng</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-black/40 text-slate-400 text-xs uppercase tracking-widest">
+                                    <th class="px-8 py-5 font-bold">Mã Đơn / Ngày</th>
+                                    <th class="px-8 py-5 font-bold">Khách hàng</th>
+                                    <th class="px-8 py-5 font-bold">Dịch vụ</th>
+                                    <th class="px-8 py-5 font-bold">Tài chính</th>
+                                    <th class="px-8 py-5 font-bold">Trạng thái</th>
+                                    <th class="px-8 py-5 font-bold text-right">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                <tr th:each="b : ${bookings}" class="table-row-hover transition-colors duration-200">
+                                    <td class="px-8 py-5">
+                                        <a th:href="@{'/checkout/' + ${b.bookingCode}}" target="_blank" class="font-black text-lg text-amber-400 hover:text-amber-300 transition" th:text="${b.bookingCode}">HT-XXXX</a>
+                                        <div class="text-xs text-slate-500 mt-1 font-medium" th:text="${b.createdAt != null ? #temporals.format(b.createdAt, 'dd/MM/yyyy HH:mm') : 'Mới đây'}">Date</div>
+                                    </td>
+                                    <td class="px-8 py-5 text-sm font-semibold text-slate-300" th:text="${b.user.email}">user@email.com</td>
+                                    <td class="px-8 py-5">
+                                        <div class="flex flex-col gap-1.5 items-start">
+                                            <div th:if="${!b.roomBookings.isEmpty()}" class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">Khách sạn</div>
+                                            <div th:if="${!b.ticketBookings.isEmpty()}" class="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">Vé Tham Quan</div>
+                                            <div th:if="${!b.vehicleBookings.isEmpty()}" class="bg-sky-500/20 border border-sky-500/30 text-sky-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">Đặt Xe</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-8 py-5">
+                                        <div class="text-base font-black text-white" th:text="${#numbers.formatInteger(b.grandTotal,3,'POINT') + ' ₫'}">1.000.000</div>
+                                        <div class="text-xs font-bold text-amber-400 mt-1" th:text="'Đã thu: ' + ${#numbers.formatInteger(b.paidAmount,3,'POINT') + ' ₫'}">Đã thu: 0</div>
+                                    </td>
+                                    <td class="px-8 py-5">
+                                        <span th:if="${b.status.name() == 'PENDING_PAYMENT'}" class="px-3 py-1.5 rounded-full bg-slate-500/20 border border-slate-500/30 text-slate-300 text-xs font-bold shadow-sm">Chờ thanh toán</span>
+                                        <span th:if="${b.status.name() == 'DEPOSITED'}" class="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold shadow-sm">Đã Cọc</span>
+                                        <span th:if="${b.status.name() == 'PAID_FULL'}" class="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold shadow-sm">Đã Thanh Toán Full</span>
+                                        <span th:if="${b.status.name() == 'DISPATCHED'}" class="px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold shadow-sm">Đã Điều Xe</span>
+                                        <span th:if="${b.status.name() == 'COMPLETED'}" class="px-3 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-bold shadow-sm">Hoàn Thành</span>
+                                        <span th:if="${b.status.name() == 'CANCELLED'}" class="px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold shadow-sm">Đã Hủy</span>
+                                    </td>
+                                    <td class="px-8 py-5 text-right">
+                                        <form th:action="@{'/admin/bookings/' + ${b.id} + '/status'}" method="post" class="inline-flex gap-3 items-center">
+                                            <select name="status" class="bg-black/30 text-slate-300 text-xs border border-white/10 rounded-xl px-3 py-2 font-bold focus:outline-none focus:border-amber-400/50">
+                                                <option value="PENDING_PAYMENT" class="bg-[#020c14]" th:selected="${b.status.name() == 'PENDING_PAYMENT'}">Chờ thanh toán</option>
+                                                <option value="DEPOSITED" class="bg-[#020c14]" th:selected="${b.status.name() == 'DEPOSITED'}">Đã Cọc</option>
+                                                <option value="PAID_FULL" class="bg-[#020c14]" th:selected="${b.status.name() == 'PAID_FULL'}">Đã Thanh Toán Full</option>
+                                                <option value="DISPATCHED" class="bg-[#020c14]" th:selected="${b.status.name() == 'DISPATCHED'}">Đã Điều Xe</option>
+                                                <option value="COMPLETED" class="bg-[#020c14]" th:selected="${b.status.name() == 'COMPLETED'}">Hoàn Thành</option>
+                                                <option value="CANCELLED" class="bg-[#020c14]" th:selected="${b.status.name() == 'CANCELLED'}">Hủy Đơn</option>
+                                            </select>
+                                            <button type="submit" class="bg-white/10 text-white text-xs font-black px-4 py-2 rounded-xl border border-white/10 hover:bg-amber-400 hover:text-slate-900 hover:border-amber-400 transition">Cập nhật</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr th:if="${bookings.isEmpty()}">
+                                    <td colspan="6" class="px-8 py-16 text-center">
+                                        <div class="text-slate-500 font-medium text-lg">Chưa có đơn hàng nào trong hệ thống.</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: VEHICLE ROUTES -->
+            <div id="sectionRoutes" class="hidden space-y-8">
+                <!-- Route management header -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-6 rounded-3xl">
+                    <div>
+                        <h2 class="text-xl font-black text-white">Danh sách Tuyến xe & Bảng giá cước</h2>
+                        <p class="text-sm text-slate-400 mt-1">Quản lý các tuyến xe, điều chỉnh giá cước một chiều & khứ hồi cho các dòng xe</p>
+                    </div>
+                    <button type="button" onclick="openRouteModal()" class="btn-cta btn-cta-gold py-3 px-6 text-sm">
+                        <span class="shine-sweep"></span>+ Thêm Tuyến Xe Mới
+                    </button>
+                </div>
+
+                <!-- Routes Table -->
+                <div class="glass-panel rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-black/40 text-slate-400 text-xs uppercase tracking-widest">
+                                    <th class="px-8 py-5 font-bold">Mã Tuyến</th>
+                                    <th class="px-8 py-5 font-bold">Tên Tuyến Xe</th>
+                                    <th class="px-8 py-5 font-bold">Loại Xe</th>
+                                    <th class="px-8 py-5 font-bold">Loại Chuyến</th>
+                                    <th class="px-8 py-5 font-bold">Giá Cước</th>
+                                    <th class="px-8 py-5 font-bold">Trạng Thái</th>
+                                    <th class="px-8 py-5 font-bold text-right">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                <tr th:each="r : ${vehicleRates}" class="table-row-hover transition-colors duration-200">
+                                    <td class="px-8 py-5 font-mono text-sm font-bold text-amber-400" th:text="${r.routeCode}">DAD_HOIAN</td>
+                                    <td class="px-8 py-5 font-bold text-white" th:text="${r.routeName}">Sân bay Đà Nẵng ↔ Hội An</td>
+                                    <td class="px-8 py-5">
+                                        <span th:if="${r.vehicleType.name() == 'SEDAN_4'}" class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 text-xs font-bold border border-sky-500/30">Sedan 4 Chỗ</span>
+                                        <span th:if="${r.vehicleType.name() == 'SUV_7'}" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">SUV 7 Chỗ</span>
+                                        <span th:if="${r.vehicleType.name() == 'VAN_16'}" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30">Van 16 Chỗ</span>
+                                    </td>
+                                    <td class="px-8 py-5">
+                                        <span th:if="${r.tripType.name() == 'ONE_WAY'}" class="text-xs text-slate-300 font-semibold">Một Chiều ➔</span>
+                                        <span th:if="${r.tripType.name() == 'ROUND_TRIP'}" class="text-xs text-purple-400 font-semibold">Khứ Hồi ⇄</span>
+                                    </td>
+                                    <td class="px-8 py-5 font-black text-lg text-gradient-gold" th:text="${#numbers.formatInteger(r.price,3,'POINT') + ' ₫'}">250.000 ₫</td>
+                                    <td class="px-8 py-5">
+                                        <span th:if="${r.active}" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">Hoạt động</span>
+                                        <span th:if="${!r.active}" class="px-3 py-1 rounded-full bg-slate-500/20 text-slate-400 text-xs font-bold border border-slate-500/30">Tạm tắt</span>
+                                    </td>
+                                    <td class="px-8 py-5 text-right space-x-2">
+                                        <form th:action="@{'/admin/vehicle-rates/' + ${r.id} + '/toggle'}" method="post" class="inline">
+                                            <button type="submit" th:text="${r.active ? 'Tắt' : 'Bật'}" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-amber-400 hover:text-slate-900 transition text-slate-300">Tắt</button>
+                                        </form>
+                                        <form th:action="@{'/admin/vehicle-rates/' + ${r.id} + '/delete'}" method="post" class="inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tuyến này?')">
+                                            <button type="submit" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white transition">Xóa</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr th:if="${vehicleRates.isEmpty()}">
+                                    <td colspan="7" class="px-8 py-16 text-center text-slate-500">Chưa có tuyến xe nào trong hệ thống.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Modal Thêm Tuyến Xe Mới -->
+    <div id="routeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden p-4">
+        <div class="bg-[#041a2a] border border-amber-400/30 rounded-3xl max-w-xl w-full p-8 shadow-2xl relative">
+            <button type="button" onclick="closeRouteModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white text-2xl font-bold">✕</button>
+            <h3 class="text-2xl font-black text-white mb-2">Thêm Tuyến Xe Mới</h3>
+            <p class="text-sm text-slate-400 mb-6">Nhập thông tin tuyến xe và giá cước tương ứng</p>
+
+            <form th:action="@{/admin/vehicle-rates}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Mã Tuyến (Route Code)</label>
+                    <input type="text" name="routeCode" placeholder="Ví dụ: DAD_HOIAN, DAD_QUYNHON..." required class="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-amber-400 focus:outline-none">
+                    <small class="text-slate-500 text-xs">Các cước của cùng một tuyến nên có chung mã tuyến</small>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Tên Tuyến Xe (Hiển thị khách)</label>
+                    <input type="text" name="routeName" placeholder="Ví dụ: Sân bay Đà Nẵng ↔ Quy Nhơn" required class="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-400 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Loại Xe</label>
+                        <select name="vehicleType" required class="w-full bg-[#020c14] border border-white/15 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-400 focus:outline-none">
+                            <option value="SEDAN_4">Sedan 4 Chỗ</option>
+                            <option value="SUV_7">SUV/MPV 7 Chỗ</option>
+                            <option value="VAN_16">Van 16 Chỗ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Loại Chuyến</label>
+                        <select name="tripType" required class="w-full bg-[#020c14] border border-white/15 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-400 focus:outline-none">
+                            <option value="ONE_WAY">Một Chiều</option>
+                            <option value="ROUND_TRIP">Hai Chiều (Khứ Hồi)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Giá Cước (VNĐ)</label>
+                    <input type="number" name="price" placeholder="Ví dụ: 350000" min="0" step="10000" required class="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-400 focus:outline-none font-bold">
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeRouteModal()" class="px-5 py-3 rounded-xl bg-white/10 text-slate-300 hover:bg-white/15 text-sm font-bold transition">Hủy</button>
+                    <button type="submit" class="btn-cta btn-cta-gold py-3 px-6 text-sm"><span class="shine-sweep"></span>Lưu Tuyến Xe</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const secBookings = document.getElementById('sectionBookings');
+            const secRoutes = document.getElementById('sectionRoutes');
+            const btnBookings = document.getElementById('btnTabBookings');
+            const btnRoutes = document.getElementById('btnTabRoutes');
+            const pageTitle = document.getElementById('pageTitle');
+
+            if (tab === 'routes') {
+                secBookings.classList.add('hidden');
+                secRoutes.classList.remove('hidden');
+                pageTitle.textContent = 'Quản lý Tuyến xe & Giá cước';
+
+                btnRoutes.className = 'w-full flex items-center px-5 py-3.5 bg-amber-400/10 text-amber-400 font-bold rounded-2xl border border-amber-400/20 shadow-[0_0_15px_rgba(245,158,11,0.1)] transition text-left';
+                btnBookings.className = 'w-full flex items-center px-5 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 font-semibold rounded-2xl transition text-left';
+                window.location.hash = 'routes';
+            } else {
+                secBookings.classList.remove('hidden');
+                secRoutes.classList.add('hidden');
+                pageTitle.textContent = 'Quản lý Đơn hàng';
+
+                btnBookings.className = 'w-full flex items-center px-5 py-3.5 bg-amber-400/10 text-amber-400 font-bold rounded-2xl border border-amber-400/20 shadow-[0_0_15px_rgba(245,158,11,0.1)] transition text-left';
+                btnRoutes.className = 'w-full flex items-center px-5 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 font-semibold rounded-2xl transition text-left';
+                window.location.hash = 'bookings';
+            }
+        }
+
+        function openRouteModal() {
+            document.getElementById('routeModal').classList.remove('hidden');
+        }
+
+        function closeRouteModal() {
+            document.getElementById('routeModal').classList.add('hidden');
+        }
+
+        // Initialize tab based on hash
+        if (window.location.hash === '#routes') {
+            switchTab('routes');
+        }
+    </script>
+</body>
+</html>

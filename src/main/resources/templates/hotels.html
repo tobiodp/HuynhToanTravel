@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Khách sạn | Huynh Toan Travel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #031f32; color: #fff; overflow: hidden; height: 100vh; margin: 0; }
+        #map { height: 100%; width: 100%; }
+        .input-glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; }
+        .input-glass:focus { outline: none; border-color: rgba(245,158,11,0.5); background: rgba(255,255,255,0.1); }
+        .input-glass option { background: #031f32; color: #fff; }
+        
+        /* Luxury Golden Scrollbar - Make scrollability instantly obvious */
+        .hotel-scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .hotel-scroll-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 999px;
+        }
+        .hotel-scroll-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #f59e0b, #d97706);
+            border-radius: 999px;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
+        .hotel-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+<div class="scroll-progress"></div>
+<header class="site-header">
+  <div class="mx-auto flex max-w-[1500px] items-center justify-between px-6">
+    <a href="/" class="font-black text-xl flex items-center gap-2">
+      <span class="text-gradient-gold">HUYNH TOAN</span>
+      <span class="text-white/90">TRAVEL</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="/booking/vehicle" class="nav-link">Đặt Xe</a>
+      <a href="/tickets" class="nav-link">Vé Tham Quan</a>
+      <a href="/hotels" class="nav-link">Khách Sạn</a>
+    </nav>
+    <div class="hidden md:flex items-center gap-3">
+        <div th:if="${isLoggedIn}" class="flex items-center gap-3">
+            <a th:if="${isAdmin}" href="/admin" class="nav-link text-amber-400 font-bold flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/30 px-3.5 py-1.5 rounded-xl hover:bg-amber-400/20 transition">
+                <span>👑</span> Admin
+            </a>
+            <span class="text-xs font-semibold text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span th:text="${currentUserEmail}">user@gmail.com</span>
+            </span>
+            <form th:action="@{/logout}" method="post" class="inline">
+                <button type="submit" class="text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl hover:bg-rose-500/20 transition">Đăng xuất</button>
+            </form>
+        </div>
+        <div th:if="${!isLoggedIn}" class="flex items-center gap-3">
+            <a href="/register" class="text-xs font-bold text-slate-300 hover:text-amber-400 transition py-2">Đăng ký</a>
+            <a href="/login" class="btn-cta btn-cta-glass py-2 px-4 text-sm">
+                <span class="shine-sweep"></span>Đăng nhập
+            </a>
+        </div>
+    </div>
+  </div>
+</header>
+
+<main class="grid h-[calc(100vh-72px)] lg:grid-cols-[52%_48%] pt-[72px] overflow-hidden">
+    <section id="hotelSection" class="hotel-scroll-container h-full overflow-y-auto p-5 lg:p-6 relative" data-lenis-prevent>
+        <!-- Top Stats Header -->
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-amber-400">🏨 Khách Sạn & Resort Miền Trung</span>
+                <h1 class="text-2xl font-black text-white mt-0.5">Đà Nẵng & Hội An</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 px-3 py-1 text-xs font-bold text-amber-400">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    Tìm thấy <b id="hotelCount" class="text-white ml-0.5 text-sm" th:text="${#lists.size(hotels)}">20</b> khách sạn
+                </span>
+                <button id="resetFilterBtn" type="button" onclick="resetFilters()" class="hidden text-xs font-bold text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full px-3 py-1 transition">
+                    ✕ Xem tất cả
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="sticky top-0 z-20 mb-6 rounded-2xl bg-[#031f32]/95 p-3.5 shadow-xl backdrop-blur-xl border border-white/15">
+            <div class="grid gap-2.5 sm:grid-cols-2 md:grid-cols-4">
+                <select id="area" class="luxury-select input-glass rounded-xl p-2.5 text-xs font-semibold">
+                    <option value="">Tất cả khu vực (20)</option>
+                    <option value="Biển Mỹ Khê">Biển Mỹ Khê (Đà Nẵng)</option>
+                    <option value="Biển Non Nước">Biển Non Nước</option>
+                    <option value="Phố Cổ Hội An">Phố Cổ Hội An</option>
+                    <option value="Bán đảo Sơn Trà">Bán đảo Sơn Trà</option>
+                    <option value="Ven sông Thu Bồn">Ven sông Thu Bồn</option>
+                    <option value="Bà Nà Hills">Bà Nà Hills</option>
+                    <option value="Trung tâm Đà Nẵng">Trung tâm Đà Nẵng</option>
+                    <option value="An Bàng">Biển An Bàng</option>
+                    <option value="Ngoại ô Hội An">Ngoại ô Hội An</option>
+                </select>
+                <select id="stars" class="luxury-select input-glass rounded-xl p-2.5 text-xs font-semibold">
+                    <option value="">Tất cả hạng sao</option>
+                    <option value="5">5 sao siêu sang ⭐⭐⭐⭐⭐</option>
+                    <option value="4">4 sao cao cấp ⭐⭐⭐⭐</option>
+                    <option value="3">3 sao tiện nghi ⭐⭐⭐</option>
+                    <option value="2">2 sao tiết kiệm ⭐⭐</option>
+                </select>
+                <input id="minPrice" type="number" placeholder="Giá từ (₫)" class="input-glass rounded-xl p-2.5 text-xs font-semibold">
+                <input id="maxPrice" type="number" placeholder="Giá đến (₫)" class="input-glass rounded-xl p-2.5 text-xs font-semibold">
+            </div>
+        </div>
+
+        <div id="hotelList" class="space-y-5">
+            <article th:each="h : ${hotels}" class="hotel-card group grid gap-5 rounded-3xl bg-white/5 border border-white/10 p-5 transition-all duration-300 hover:border-amber-400/40 hover:bg-white/10 hover:-translate-y-1 cursor-pointer md:grid-cols-[200px_1fr]" th:attr="data-id=${h.id},data-lat=${h.latitude},data-lng=${h.longitude},data-name=${h.name},data-area=${h.area},data-stars=${h.starRating},data-price=${!#lists.isEmpty(h.rooms) ? h.rooms[0].pricePerNight : 0}">
+                <div class="relative h-48 w-full overflow-hidden rounded-2xl">
+                    <img class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" th:src="${h.imageUrl != null ? h.imageUrl : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80'}" alt="Hotel">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <span class="absolute bottom-3 left-3 rounded-full bg-slate-900/80 backdrop-blur px-3 py-1 text-xs font-black text-amber-400" th:text="${h.starRating + '★'}">4★</span>
+                </div>
+                
+                <div class="flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="rounded-lg bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 text-xs font-bold uppercase tracking-widest text-amber-400" th:text="${h.area}">An Bàng</span>
+                        </div>
+                        <h2 class="mt-3 text-2xl font-black text-white leading-tight group-hover:text-amber-400 transition" th:text="${h.name}">Hotel</h2>
+                        <p class="mt-1.5 text-sm text-slate-400 font-medium" th:text="${h.address}">Địa chỉ</p>
+                        <p class="mt-3 line-clamp-2 text-sm text-slate-300 leading-relaxed" th:text="${h.description}">Mô tả</p>
+                    </div>
+                    <div class="mt-5 flex items-end justify-between border-t border-white/10 pt-4">
+                        <div>
+                            <small class="text-slate-400 font-medium uppercase text-[10px] tracking-wider block mb-1">Giá từ</small>
+                            <p class="text-2xl font-black text-gradient-gold" th:text="${!#lists.isEmpty(h.rooms) ? #numbers.formatInteger(h.rooms[0].pricePerNight,3,'POINT') + ' ₫' : 'Liên hệ'}">450.000 ₫</p>
+                        </div>
+                        <a th:href="@{'/hotels/' + ${h.id}}" class="btn-cta btn-cta-glass px-6 py-2.5 text-sm">
+                            <span class="shine-sweep"></span>Xem phòng
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- Floating Scroll Hint Pill -->
+        <div id="scrollHint" class="sticky bottom-4 z-10 mx-auto w-max flex items-center gap-2 rounded-full bg-amber-400/90 text-slate-950 px-4 py-1.5 text-xs font-black shadow-xl animate-bounce backdrop-blur transition-opacity duration-300 pointer-events-none">
+            <span>↓</span>
+            <span>Cuộn xuống để xem tiếp tất cả khách sạn</span>
+        </div>
+    </section>
+    
+    <aside class="h-full hidden lg:block border-l border-white/10 relative overflow-hidden">
+        <div class="absolute inset-0 z-10 pointer-events-none shadow-[inset_20px_0_40px_-20px_rgba(3,31,50,0.8)]"></div>
+        <div id="map" class="w-full h-full"></div>
+    </aside>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:inline="javascript">
+const cards = [...document.querySelectorAll('.hotel-card')];
+const map = L.map('map', {zoomControl: false}).setView([16.02, 108.26], 11);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// Luxury Dark theme map tiles (Free, No API Key, No Watermark)
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+    maxZoom: 16
+}).addTo(map);
+
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '',
+    maxZoom: 16
+}).addTo(map);
+
+const markers = new Map();
+const initialBounds = [];
+
+function fmtPrice(card) {
+    const txt = card.querySelector('.text-gradient-gold')?.textContent?.trim() || 'Xem giá';
+    return txt.replace('.000 ₫', 'k').replace(' ₫', '');
+}
+
+cards.forEach(card => {
+    const lat = +card.dataset.lat, lng = +card.dataset.lng, name = card.dataset.name;
+    if (lat && lng) {
+        initialBounds.push([lat, lng]);
+        const icon = L.divIcon({
+            className: '',
+            html: `<div class="price-pin pulseRadar">${fmtPrice(card)}</div>`,
+            iconSize: [80, 32],
+            iconAnchor: [40, 16]
+        });
+        
+        const popupContent = `
+            <div class="p-2.5">
+                <b class="text-sm font-black text-slate-800 block mb-1">${name}</b>
+                <div class="text-xs text-slate-500 mb-3">${card.querySelector('.text-slate-400').textContent}</div>
+                <a href="/hotels/${card.dataset.id}" class="bg-amber-400 hover:bg-amber-300 text-slate-900 px-3.5 py-1.5 rounded-full text-xs font-bold inline-block transition">Xem chi tiết</a>
+            </div>
+        `;
+        
+        const marker = L.marker([lat, lng], {icon}).addTo(map).bindPopup(popupContent);
+        markers.set(card.dataset.id, marker);
+        
+        card.addEventListener('mouseenter', () => {
+            map.flyTo([lat, lng], 14, {duration: .8});
+            marker.openPopup();
+        });
+    }
+});
+
+// Auto-fit all hotels into view
+if (initialBounds.length > 0) {
+    map.fitBounds(initialBounds, { padding: [40, 40], maxZoom: 13 });
+}
+
+function filter() {
+    const area = document.getElementById('area').value;
+    const stars = +(document.getElementById('stars').value || 0);
+    const minPrice = +(document.getElementById('minPrice').value || 0);
+    const maxPrice = +(document.getElementById('maxPrice').value || Infinity);
+
+    const activeBounds = [];
+    let matchCount = 0;
+
+    cards.forEach(c => {
+        const cardArea = c.dataset.area || '';
+        const cardStars = +c.dataset.stars || 0;
+        const cardPrice = +c.dataset.price || 0;
+
+        const okArea = !area || cardArea === area || cardArea.toLowerCase().includes(area.toLowerCase());
+        const okStars = cardStars >= stars;
+        const okMin = !minPrice || cardPrice >= minPrice;
+        const okMax = !maxPrice || cardPrice <= maxPrice;
+        const ok = okArea && okStars && okMin && okMax;
+
+        c.style.display = ok ? 'grid' : 'none';
+        if (ok) matchCount++;
+
+        const marker = markers.get(c.dataset.id);
+        if (marker) {
+            if (ok) {
+                if (!map.hasLayer(marker)) map.addLayer(marker);
+                const lat = +c.dataset.lat, lng = +c.dataset.lng;
+                if (lat && lng) activeBounds.push([lat, lng]);
+            } else {
+                if (map.hasLayer(marker)) map.removeLayer(marker);
+            }
+        }
+    });
+
+    const hotelCountEl = document.getElementById('hotelCount');
+    if (hotelCountEl) hotelCountEl.textContent = matchCount;
+
+    const resetBtn = document.getElementById('resetFilterBtn');
+    if (resetBtn) {
+        if (area || stars || minPrice || maxPrice !== Infinity) {
+            resetBtn.classList.remove('hidden');
+        } else {
+            resetBtn.classList.add('hidden');
+        }
+    }
+
+    if (activeBounds.length > 0) {
+        map.fitBounds(activeBounds, { padding: [40, 40], maxZoom: 14 });
+    }
+}
+
+function resetFilters() {
+    document.getElementById('area').value = '';
+    document.getElementById('stars').value = '';
+    document.getElementById('minPrice').value = '';
+    document.getElementById('maxPrice').value = '';
+    window.history.replaceState({}, '', '/hotels');
+    filter();
+}
+
+// Fade out scroll hint when user scrolls down
+const scrollContainer = document.getElementById('hotelSection');
+const scrollHint = document.getElementById('scrollHint');
+if (scrollContainer && scrollHint) {
+    scrollContainer.addEventListener('scroll', () => {
+        if (scrollContainer.scrollTop > 60) {
+            scrollHint.style.opacity = '0';
+        } else {
+            scrollHint.style.opacity = '1';
+        }
+    }, { passive: true });
+}
+
+document.getElementById('area').addEventListener('change', filter);
+document.getElementById('stars').addEventListener('change', filter);
+document.getElementById('minPrice').addEventListener('input', filter);
+document.getElementById('maxPrice').addEventListener('input', filter);
+
+// Đọc tham số từ URL khi người dùng tìm kiếm từ trang chủ
+const urlParams = new URLSearchParams(window.location.search);
+const areaParam = urlParams.get('area');
+if (areaParam) {
+    const areaSelect = document.getElementById('area');
+    for (let opt of areaSelect.options) {
+        if (opt.value && (opt.value.toLowerCase().includes(areaParam.toLowerCase()) || areaParam.toLowerCase().includes(opt.value.toLowerCase()))) {
+            areaSelect.value = opt.value;
+            break;
+        }
+    }
+    filter();
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

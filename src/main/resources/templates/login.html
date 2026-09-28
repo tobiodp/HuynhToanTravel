@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng nhập / Đăng ký | Huynh Toan Travel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #050e1c; color: #fff; margin: 0; min-height: 100vh; }
+        .input-glass { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; }
+        .input-glass:focus { outline: none; border-color: rgba(245,158,11,0.6); background: rgba(255,255,255,0.1); box-shadow: 0 0 15px rgba(245,158,11,0.2); }
+        .swal2-popup { background: #0a172c !important; color: #fff !important; border: 1px solid rgba(245,158,11,0.3) !important; border-radius: 24px !important; }
+        .swal2-title, .swal2-html-container { color: #fff !important; }
+        .otp-input { letter-spacing: 12px; font-family: monospace; font-size: 28px; text-align: center; }
+        .tab-btn-active { background: linear-gradient(135deg, #f59e0b, #d97706); color: #021224; font-weight: 800; box-shadow: 0 4px 15px rgba(245,158,11,0.35); }
+        .tab-btn-inactive { color: #94a3b8; font-weight: 600; }
+        .tab-btn-inactive:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body class="min-h-screen w-full flex">
+
+<!-- CỘT TRÁI: THƯƠNG HIỆU & GIỚI THIỆU CAO CẤP -->
+<div class="hidden lg:flex lg:w-[46%] mesh-gradient flex-col justify-between p-12 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-15" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 28px 28px;"></div>
+    
+    <div class="relative z-10">
+        <a href="/" class="font-black text-2xl flex items-center gap-2">
+            <span class="text-gradient-gold tracking-wider">HUYNH TOAN</span>
+            <span class="text-white">TRAVEL</span>
+        </a>
+    </div>
+
+    <div class="relative z-10 my-auto">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider mb-6">
+            ✨ Hệ Thống Đặt Dịch Vụ Du Lịch Thông Minh
+        </div>
+        <h1 class="text-4xl xl:text-5xl font-black text-white leading-tight drop-shadow-lg mb-6">
+            Hành trình tuyệt hảo<br><span class="text-gradient-gold">bắt đầu từ đây.</span>
+        </h1>
+        <p class="text-base xl:text-lg text-white/80 font-medium max-w-md leading-relaxed mb-10">
+            Đăng ký và đăng nhập nhanh chóng bằng Email. Đặt xe đưa đón sân bay, chọn phòng resort 5 sao và nhận vé điện tử tức thì.
+        </p>
+        
+        <div class="space-y-3.5">
+            <div class="flex items-center gap-3 bg-black/25 backdrop-blur rounded-2xl p-3.5 border border-white/10 w-max">
+                <div class="bg-amber-400 rounded-xl p-2 text-slate-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206"></path></svg>
+                </div>
+                <div>
+                    <span class="font-bold text-white text-sm block">Đăng ký & Đăng nhập bằng Email</span>
+                    <span class="text-xs text-white/60">Tạo tài khoản chỉ trong 30 giây</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 bg-black/25 backdrop-blur rounded-2xl p-3.5 border border-white/10 w-max">
+                <div class="bg-amber-400 rounded-xl p-2 text-slate-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <div>
+                    <span class="font-bold text-white text-sm block">Bảo mật thông tin thanh toán</span>
+                    <span class="text-xs text-white/60">Mã hóa an toàn cho toàn bộ đơn hàng</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="relative z-10 text-xs text-white/50 font-medium flex items-center justify-between">
+        <span>&copy; 2026 Huynh Toan Travel. All rights reserved.</span>
+        <span class="text-amber-400/80">Hotline: 0905.123.456</span>
+    </div>
+</div>
+
+<!-- CỘT PHẢI: KHUNG ĐĂNG NHẬP / ĐĂNG KÝ BẰNG EMAIL -->
+<div class="w-full lg:w-[54%] flex flex-col justify-center items-center p-6 bg-[#050e1c] relative min-h-screen">
+    <a href="/" class="absolute top-6 right-6 text-sm font-bold text-slate-400 hover:text-amber-400 transition flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/10">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Trang chủ
+    </a>
+    
+    <div class="w-full max-w-[460px] my-auto py-8">
+        <!-- Mobile Logo -->
+        <div class="text-center mb-6 lg:hidden">
+            <h2 class="text-3xl font-black text-gradient-gold">HUYNH TOAN TRAVEL</h2>
+            <p class="text-slate-400 text-sm mt-1">Đăng nhập / Đăng ký tài khoản</p>
+        </div>
+
+        <div class="bg-white/5 border border-white/10 rounded-3xl p-7 sm:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            <!-- Glow background effect -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- DUAL TABS: ĐĂNG NHẬP vs ĐĂNG KÝ -->
+            <div class="flex items-center p-1 bg-white/5 rounded-2xl mb-6 border border-white/10 relative z-10">
+                <button type="button" id="tabBtnLogin" onclick="switchAuthTab('login')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 tab-btn-active">
+                    <span>🔑</span> Đăng Nhập
+                </button>
+                <button type="button" id="tabBtnRegister" onclick="switchAuthTab('register')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 tab-btn-inactive">
+                    <span>📝</span> Đăng Ký Bằng Email
+                </button>
+            </div>
+
+            <!-- TAB 1: FORM ĐĂNG NHẬP -->
+            <div id="panelLogin" class="relative z-10">
+                <div class="text-center mb-5">
+                    <h3 class="text-2xl font-black text-white">Chào mừng trở lại!</h3>
+                    <p class="text-xs text-slate-400 mt-1">Đăng nhập tài khoản để tiếp tục thanh toán và quản lý đơn</p>
+                </div>
+
+                <form id="formLogin" onsubmit="handleLoginPassword(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Địa chỉ Email</label>
+                        <div class="relative">
+                            <input id="loginEmail" type="email" required placeholder="name@example.com" 
+                                   class="input-glass w-full rounded-xl py-3 pl-10 pr-4 text-sm font-medium transition">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">Mật khẩu</label>
+                            <button type="button" onclick="switchToOtpFromLogin()" class="text-xs text-amber-400 hover:underline font-semibold">
+                                Quên mật khẩu?
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input id="loginPassword" type="password" required placeholder="Nhập mật khẩu" 
+                                   class="input-glass w-full rounded-xl py-3 pl-10 pr-10 text-sm font-medium transition">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'eyeIcon1')" class="absolute right-3.5 top-3 text-slate-400 hover:text-white">
+                                <svg id="eyeIcon1" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnLoginSubmit" class="btn-cta btn-cta-gold w-full justify-center py-3.5 text-sm font-black shadow-lg">
+                        <span class="shine-sweep"></span>Đăng nhập ngay →
+                    </button>
+                </form>
+
+                <div class="relative flex items-center py-4 my-1">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase tracking-wider">Hoặc</span>
+                    <div class="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <div class="space-y-3 mt-4">
+                    <!-- Real Official Google Sign-In Button -->
+                    <div id="googleBtnLogin" class="w-full flex justify-center"></div>
+
+                    <button type="button" onclick="switchToOtpFromLogin()" class="w-full flex items-center justify-center gap-2.5 rounded-xl border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20 py-2.5 px-4 font-bold text-xs text-amber-300 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        Đăng nhập bằng mã OTP qua Email
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 2: FORM ĐĂNG KÝ BẰNG EMAIL (RÕ RÀNG, ĐẦY ĐỦ) -->
+            <div id="panelRegister" class="relative z-10 hidden">
+                <div class="text-center mb-5">
+                    <h3 class="text-2xl font-black text-white">Đăng Ký Tài Khoản</h3>
+                    <p class="text-xs text-slate-400 mt-1">Đăng ký bằng email để lưu thông tin và nhận ưu đãi chuyến đi</p>
+                </div>
+
+                <form id="formRegister" onsubmit="handleRegisterDirect(event)" class="space-y-3.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Họ và tên <span class="text-amber-400">*</span></label>
+                        <input id="regFullName" type="text" required placeholder="Ví dụ: Nguyễn Văn Toàn" 
+                               class="input-glass w-full rounded-xl py-2.5 px-3.5 text-sm font-medium transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Địa chỉ Email <span class="text-amber-400">*</span></label>
+                        <div class="relative">
+                            <input id="regEmail" type="email" required placeholder="name@example.com" 
+                                   class="input-glass w-full rounded-xl py-2.5 pl-10 pr-3.5 text-sm font-medium transition">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Số điện thoại (Nhận xác nhận đặt xe/vé)</label>
+                        <input id="regPhone" type="tel" placeholder="0905 xxx xxx" 
+                               class="input-glass w-full rounded-xl py-2.5 px-3.5 text-sm font-medium transition">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Mật khẩu <span class="text-amber-400">*</span></label>
+                            <div class="relative">
+                                <input id="regPassword" type="password" required minlength="6" placeholder="Ít nhất 6 ký tự" 
+                                       class="input-glass w-full rounded-xl py-2.5 pl-3.5 pr-9 text-sm font-medium transition">
+                                <button type="button" onclick="togglePasswordVisibility('regPassword', 'eyeIconReg1')" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white">
+                                    <svg id="eyeIconReg1" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Xác nhận lại <span class="text-amber-400">*</span></label>
+                            <div class="relative">
+                                <input id="regConfirmPassword" type="password" required minlength="6" placeholder="Nhập lại mật khẩu" 
+                                       class="input-glass w-full rounded-xl py-2.5 pl-3.5 pr-9 text-sm font-medium transition">
+                                <button type="button" onclick="togglePasswordVisibility('regConfirmPassword', 'eyeIconReg2')" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white">
+                                    <svg id="eyeIconReg2" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnRegSubmit" class="btn-cta btn-cta-gold w-full justify-center py-3.5 text-sm font-black shadow-lg mt-3">
+                        <span class="shine-sweep"></span>Đăng Ký Bằng Email →
+                    </button>
+                </form>
+
+                <div class="relative flex items-center py-3 my-1">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase tracking-wider">Hoặc</span>
+                    <div class="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <div id="googleBtnRegister" class="w-full flex justify-center"></div>
+
+                <p class="text-[11px] text-slate-500 text-center mt-3">
+                    Đã có tài khoản? <a href="javascript:void(0)" onclick="switchAuthTab('login')" class="text-amber-400 hover:underline font-bold">Đăng nhập tại đây</a>
+                </p>
+            </div>
+
+            <!-- BƯỚC 3: XÁC THỰC MÃ OTP (NẾU CHỌN LOGIN OTP) -->
+            <div id="panelOtp" class="relative z-10 hidden">
+                <div class="text-center mb-5">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-black text-white">Xác thực mã OTP</h3>
+                    <p class="text-xs text-slate-400 mt-1">
+                        Mã 6 chữ số đã gửi tới <b class="text-amber-400 font-semibold" id="displayOtpEmail">email@example.com</b>
+                    </p>
+                    <button type="button" onclick="switchAuthTab('login')" class="text-xs text-slate-400 hover:text-amber-400 underline mt-1">Đổi email khác</button>
+                </div>
+
+                <form id="formVerifyOtp" onsubmit="handleVerifyOtp(event)" class="space-y-4">
+                    <div>
+                        <input id="inputOtpCode" type="text" maxlength="6" pattern="[0-9]{6}" required placeholder="000000" 
+                               class="input-glass w-full rounded-2xl py-3.5 otp-input text-amber-400 font-black tracking-[10px] text-center" autofocus>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs text-slate-400 px-1">
+                        <span>Hiệu lực: <b id="otpCountdown" class="text-amber-400">05:00</b></span>
+                        <button type="button" id="btnResendOtp" onclick="sendOtpCode(true)" class="text-amber-400 hover:underline font-semibold">Gửi lại mã</button>
+                    </div>
+
+                    <button type="submit" id="btnVerifyOtpSubmit" class="btn-cta btn-cta-gold w-full justify-center py-3.5 text-base font-black shadow-lg">
+                        <span class="shine-sweep"></span>Xác nhận & Đăng nhập
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-6 text-xs text-slate-500">
+            Cần hỗ trợ đăng ký / đăng nhập? Hotline <a href="tel:0905123456" class="text-amber-400 hover:underline font-bold">0905.123.456</a> (24/7)
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const initialTab = /*[[${initialTab}]]*/ 'login';
+    const googleClientId = /*[[${googleClientId}]]*/ '684087082646-viidr5jkf7t6gcgu2nampcef0cevh6pf.apps.googleusercontent.com';
+    let currentOtpEmail = '';
+    let otpTimerInterval = null;
+
+    function getCsrf() {
+        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        return { token, header };
+    }
+
+    function getRedirectUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('redirect') || '/';
+    }
+
+    function switchAuthTab(tab) {
+        clearInterval(otpTimerInterval);
+        const pLogin = document.getElementById('panelLogin');
+        const pRegister = document.getElementById('panelRegister');
+        const pOtp = document.getElementById('panelOtp');
+        const btnL = document.getElementById('tabBtnLogin');
+        const btnR = document.getElementById('tabBtnRegister');
+
+        pOtp.classList.add('hidden');
+
+        if (tab === 'register') {
+            pLogin.classList.add('hidden');
+            pRegister.classList.remove('hidden');
+            btnR.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 tab-btn-active';
+            btnL.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 tab-btn-inactive';
+            setTimeout(() => {
+                document.getElementById('regFullName').focus();
+                renderGoogleButtons();
+            }, 80);
+        } else {
+            pRegister.classList.add('hidden');
+            pLogin.classList.remove('hidden');
+            btnL.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 tab-btn-active';
+            btnR.className = 'flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 tab-btn-inactive';
+            setTimeout(() => {
+                document.getElementById('loginEmail').focus();
+                renderGoogleButtons();
+            }, 80);
+        }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>';
+        } else {
+            input.type = 'password';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+        }
+    }
+
+    // 1. ĐĂNG NHẬP MẬT KHẨU
+    async function handleLoginPassword(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const btn = document.getElementById('btnLoginSubmit');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="shine-sweep"></span>Đang đăng nhập...';
+
+        const { token, header } = getCsrf();
+        const body = new URLSearchParams();
+        body.append('email', email);
+        body.append('password', password);
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', [header]: token },
+                body: body
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập thành công!',
+                    text: 'Hân hạnh phục vụ chuyến đi của bạn!',
+                    timer: 1000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = getRedirectUrl();
+                });
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="shine-sweep"></span>Đăng nhập ngay →';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Đăng nhập không thành công',
+                    text: data.error || 'Email hoặc mật khẩu chưa chính xác',
+                    confirmButtonColor: '#f59e0b'
+                });
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="shine-sweep"></span>Đăng nhập ngay →';
+            Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ!', 'error');
+        }
+    }
+
+    // 2. ĐĂNG KÝ BẰNG EMAIL TRỰC TIẾP
+    async function handleRegisterDirect(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('regFullName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+        const btn = document.getElementById('btnRegSubmit');
+
+        if (password !== confirmPassword) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Mật khẩu không khớp',
+                text: 'Vui lòng kiểm tra lại 2 ô nhập mật khẩu!',
+                confirmButtonColor: '#f59e0b'
+            });
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="shine-sweep"></span>Đang tạo tài khoản...';
+
+        const { token, header } = getCsrf();
+        const body = new URLSearchParams();
+        body.append('email', email);
+        body.append('fullName', fullName);
+        body.append('phone', phone);
+        body.append('password', password);
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', [header]: token },
+                body: body
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng ký thành công!',
+                    text: 'Tự động đăng nhập vào hệ thống...',
+                    timer: 1200,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = getRedirectUrl();
+                });
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="shine-sweep"></span>Đăng Ký Bằng Email →';
+                Swal.fire('Đăng ký thất bại', data.error || 'Vui lòng kiểm tra lại thông tin', 'error');
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="shine-sweep"></span>Đăng Ký Bằng Email →';
+            Swal.fire('Lỗi', 'Không thể kết nối máy chủ!', 'error');
+        }
+    }
+
+    // 3. CHUYỂN QUA ĐĂNG NHẬP OTP BẰNG EMAIL
+    async function switchToOtpFromLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        if (!email) {
+            const { value: inputMail } = await Swal.fire({
+                title: 'Đăng nhập OTP qua Email',
+                input: 'email',
+                inputLabel: 'Nhập địa chỉ Email của bạn để nhận mã 6 chữ số',
+                inputPlaceholder: 'name@example.com',
+                showCancelButton: true,
+                confirmButtonText: 'Gửi mã OTP',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#f59e0b'
+            });
+            if (!inputMail) return;
+            currentOtpEmail = inputMail.trim();
+        } else {
+            currentOtpEmail = email;
+        }
+        sendOtpCode();
+    }
+
+    async function sendOtpCode(isResend = false) {
+        if (!currentOtpEmail) return;
+
+        Swal.fire({
+            title: isResend ? 'Đang gửi lại mã...' : 'Đang gửi mã xác thực...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        const { token, header } = getCsrf();
+        const body = new URLSearchParams();
+        body.append('email', currentOtpEmail);
+
+        try {
+            const res = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', [header]: token },
+                body: body
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                document.getElementById('panelLogin').classList.add('hidden');
+                document.getElementById('panelRegister').classList.add('hidden');
+                document.getElementById('panelOtp').classList.remove('hidden');
+                document.getElementById('displayOtpEmail').textContent = currentOtpEmail;
+
+                startOtpTimer();
+                setTimeout(() => document.getElementById('inputOtpCode').focus(), 100);
+
+                let hintHtml = `Mã OTP đã được gửi tới <b>${currentOtpEmail}</b>.`;
+                if (data.debugOtp) {
+                    hintHtml += `<br><span class="text-xs text-amber-400 mt-2 block font-mono">Mã OTP thử nghiệm: <b>${data.debugOtp}</b></span>`;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đã gửi mã xác thực',
+                    html: hintHtml,
+                    confirmButtonColor: '#f59e0b'
+                });
+            } else {
+                Swal.fire('Lỗi', data.error || 'Không thể gửi mã OTP', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Lỗi kết nối', 'Không thể gửi mã OTP', 'error');
+        }
+    }
+
+    async function handleVerifyOtp(e) {
+        e.preventDefault();
+        const otp = document.getElementById('inputOtpCode').value.trim();
+        const btn = document.getElementById('btnVerifyOtpSubmit');
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="shine-sweep"></span>Đang xác thực...';
+
+        const { token, header } = getCsrf();
+        const body = new URLSearchParams();
+        body.append('email', currentOtpEmail);
+        body.append('otp', otp);
+
+        try {
+            const res = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', [header]: token },
+                body: body
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                clearInterval(otpTimerInterval);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Xác thực thành công!',
+                    text: 'Đang chuyển hướng...',
+                    timer: 1000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = getRedirectUrl();
+                });
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="shine-sweep"></span>Xác nhận & Đăng nhập';
+                Swal.fire('Xác thực thất bại', data.error || 'Mã OTP không đúng', 'error');
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="shine-sweep"></span>Xác nhận & Đăng nhập';
+            Swal.fire('Lỗi', 'Lỗi kiểm tra mã xác nhận', 'error');
+        }
+    }
+
+    function startOtpTimer() {
+        clearInterval(otpTimerInterval);
+        let seconds = 300;
+        const countdownEl = document.getElementById('otpCountdown');
+        const resendBtn = document.getElementById('btnResendOtp');
+        resendBtn.disabled = true;
+        resendBtn.classList.add('opacity-50', 'pointer-events-none');
+
+        otpTimerInterval = setInterval(() => {
+            seconds--;
+            if (seconds <= 0) {
+                clearInterval(otpTimerInterval);
+                countdownEl.textContent = '00:00 (Hết hạn)';
+                resendBtn.disabled = false;
+                resendBtn.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+                const s = String(seconds % 60).padStart(2, '0');
+                countdownEl.textContent = `${m}:${s}`;
+            }
+        }, 1000);
+    }
+
+    // === GOOGLE IDENTITY SERVICES (GSI) REAL AUTHENTICATION ===
+    let isGoogleInitialized = false;
+
+    function initGoogleAuth() {
+        if (!window.google || !google.accounts || !google.accounts.id) {
+            setTimeout(initGoogleAuth, 120);
+            return;
+        }
+
+        if (!isGoogleInitialized) {
+            try {
+                google.accounts.id.initialize({
+                    client_id: googleClientId,
+                    callback: handleGoogleCredentialResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                isGoogleInitialized = true;
+            } catch (err) {
+                console.error('Lỗi khởi tạo Google Auth:', err);
+            }
+        }
+
+        renderGoogleButtons();
+    }
+
+    function renderGoogleButtons() {
+        if (!window.google || !google.accounts || !google.accounts.id || !isGoogleInitialized) {
+            return;
+        }
+
+        const btnLogin = document.getElementById('googleBtnLogin');
+        if (btnLogin && btnLogin.children.length === 0) {
+            google.accounts.id.renderButton(btnLogin, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'continue_with',
+                shape: 'rectangular',
+                width: 360,
+                logo_alignment: 'left'
+            });
+        }
+
+        const btnRegister = document.getElementById('googleBtnRegister');
+        if (btnRegister && btnRegister.children.length === 0) {
+            google.accounts.id.renderButton(btnRegister, {
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'signup_with',
+                shape: 'rectangular',
+                width: 360,
+                logo_alignment: 'left'
+            });
+        }
+    }
+
+    async function handleGoogleCredentialResponse(response) {
+        if (!response || !response.credential) {
+            Swal.fire('Lỗi', 'Không nhận được thông tin xác thực từ tài khoản Google.', 'error');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Đang xác thực với Google...',
+            text: 'Hệ thống đang kết nối tài khoản an toàn.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const { token, header } = getCsrf();
+        const body = new URLSearchParams();
+        body.append('credential', response.credential);
+
+        try {
+            const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [header]: token
+                },
+                body: body
+            });
+
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (err) {
+                if (text.includes('login') || text.includes('DOCTYPE') || text.includes('html')) {
+                    window.location.href = getRedirectUrl();
+                    return;
+                }
+                throw new Error('Phản hồi không hợp lệ từ máy chủ');
+            }
+
+            if (res.ok && data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng nhập Google thành công!',
+                    text: 'Chào mừng ' + (data.fullName || data.email || 'bạn') + '!',
+                    timer: 1200,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = getRedirectUrl();
+                });
+            } else {
+                Swal.fire('Đăng nhập Google không thành công', data.error || 'Vui lòng thử lại sau', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Lỗi kết nối', err.message || 'Không thể kết nối đến máy chủ để xác thực Google.', 'error');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab') || initialTab;
+        if (tab === 'register' || window.location.pathname === '/register') {
+            switchAuthTab('register');
+        } else {
+            switchAuthTab('login');
+        }
+
+        initGoogleAuth();
+    });
+
+    window.addEventListener('load', () => {
+        initGoogleAuth();
+    });
+</script>
+</body>
+</html>

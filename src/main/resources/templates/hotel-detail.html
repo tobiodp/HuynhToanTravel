@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${hotel.name + ' - Huỳnh Toàn Travel'}">Khách sạn</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #031f32; color: #fff; }
+        .input-glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; }
+        .input-glass:focus { outline: none; border-color: rgba(245,158,11,0.5); background: rgba(255,255,255,0.1); }
+        .swal2-popup { background: #050e1c !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 24px !important; }
+        .swal2-title, .swal2-html-container { color: #fff !important; }
+    </style>
+</head>
+<body>
+<div class="scroll-progress"></div>
+<header class="site-header">
+  <div class="mx-auto flex max-w-5xl items-center justify-between px-6">
+    <a href="/" class="font-black text-xl flex items-center gap-2">
+      <span class="text-gradient-gold">HUYNH TOAN</span>
+      <span class="text-white/90">TRAVEL</span>
+    </a>
+    <div class="flex items-center gap-4">
+      <a href="/hotels" class="flex items-center gap-1.5 text-slate-300 hover:text-amber-400 transition text-sm font-semibold">← Danh sách khách sạn</a>
+      <div th:if="${isLoggedIn}" class="hidden sm:flex items-center gap-2">
+        <a th:if="${isAdmin}" href="/admin" class="text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/30 px-3 py-1.5 rounded-xl hover:bg-amber-400/20 transition">👑 Admin</a>
+        <span class="text-xs text-slate-300 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10" th:text="${currentUserEmail}"></span>
+      </div>
+      <div th:if="${!isLoggedIn}" class="hidden sm:flex items-center gap-3">
+        <a href="/register" class="text-xs font-bold text-slate-300 hover:text-amber-400 transition">Đăng ký</a>
+        <a href="/login" class="btn-cta btn-cta-glass py-1.5 px-3.5 text-xs"><span class="shine-sweep"></span>Đăng nhập</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-5xl px-6 py-28">
+    <div class="relative w-full h-80 lg:h-96 rounded-3xl overflow-hidden shadow-2xl mb-12" data-aos="fade-up">
+        <img th:src="${hotel.imageUrl != null ? hotel.imageUrl : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80'}" alt="Hotel" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="absolute bottom-8 left-8 right-8 flex flex-col items-start">
+            <span class="rounded-full bg-slate-900/80 backdrop-blur px-4 py-1.5 text-sm font-black text-amber-400 tracking-widest mb-3 shadow-lg" th:text="${hotel.starRating + '★ Tiêu chuẩn'}">5★ Tiêu chuẩn</span>
+            <h1 class="text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-md" th:text="${hotel.name}">Tên KS</h1>
+        </div>
+    </div>
+
+    <div class="grid gap-12 lg:grid-cols-12">
+        <div class="lg:col-span-5" data-aos="fade-right">
+            <div class="hero-eyebrow mb-4 inline-block"><span th:text="${hotel.area}">Khu vực</span></div>
+            <p class="text-slate-300 font-semibold flex items-start gap-2 text-base mb-6">
+                <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span th:text="${hotel.address}">Địa chỉ</span>
+            </p>
+            <p class="text-slate-400 leading-relaxed text-base mb-6" th:text="${hotel.description}">Mô tả</p>
+            
+            <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                <div class="text-xs font-bold uppercase tracking-wider text-amber-400">Tiện ích bao gồm</div>
+                <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-300">
+                    <span class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Ăn sáng miễn phí</span>
+                    <span class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Wifi tốc độ cao</span>
+                    <span class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Hồ bơi vô cực</span>
+                    <span class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Miễn phí hủy 24h</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-7" data-aos="fade-left">
+            <div class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur shadow-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-black text-white">Bảng Giá Các Hạng Phòng</h2>
+                    <span class="text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full" th:text="${hotel.rooms.size() + ' Hạng phòng'}">Hạng phòng</span>
+                </div>
+                
+                <div class="grid gap-5 sm:grid-cols-3 mb-8">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Nhận - Trả phòng</label>
+                        <input type="text" id="dateRange" placeholder="Chọn ngày" class="input-glass w-full rounded-xl p-3 font-bold text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Số lượng phòng</label>
+                        <input type="number" id="roomsCount" value="1" min="1" max="10" class="input-glass w-full rounded-xl p-3 font-bold text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Số người</label>
+                        <input type="number" id="guestsCount" value="2" min="1" max="20" class="input-glass w-full rounded-xl p-3 font-bold text-sm text-center">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <th:block th:each="room, iter : ${hotel.rooms}">
+                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 rounded-2xl bg-black/20 border border-white/5 hover:border-amber-400/40 transition-colors" data-aos="fade-up" th:attr="data-aos-delay=${iter.index * 60}">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-black text-white" th:text="${room.roomType}">Phòng Deluxe</h3>
+                                <p class="mt-1 text-sm text-slate-400 font-medium" th:text="${'Sức chứa tối đa: ' + room.maxGuests + ' khách'}">Tối đa 2 khách</p>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] text-slate-300">Buffet sáng</span>
+                                    <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] text-slate-300">Wifi 5G</span>
+                                    <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] text-slate-300">Điều hòa</span>
+                                </div>
+                                <div class="mt-3 text-xs font-bold text-emerald-400 room-status" th:data-room-id="${room.id}"></div>
+                            </div>
+                            <div class="text-right w-full md:w-auto shrink-0">
+                                <div class="text-2xl font-black text-gradient-gold" th:text="${#numbers.formatInteger(room.pricePerNight,3,'POINT') + ' ₫'}">1.000.000 ₫</div>
+                                <div class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">/ đêm</div>
+                                <button type="button" th:onclick="'bookRoom(' + ${room.id} + ')'" class="mt-4 btn-cta btn-cta-gold w-full md:w-auto px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed book-btn">
+                                    <span class="shine-sweep"></span>Đặt phòng ngay
+                                </button>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    let checkInStr = '';
+    let checkOutStr = '';
+    let nights = 1;
+
+    const fp = flatpickr("#dateRange", {
+        mode: "range",
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        onChange: function(selectedDates) {
+            if (selectedDates.length === 2) {
+                checkInStr = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+                checkOutStr = flatpickr.formatDate(selectedDates[1], "Y-m-d");
+                nights = Math.max(1, Math.round((selectedDates[1] - selectedDates[0]) / (1000 * 60 * 60 * 24)));
+                checkAvailability();
+            } else {
+                checkInStr = ''; checkOutStr = '';
+                document.querySelectorAll('.room-status').forEach(el => el.textContent = '');
+            }
+        }
+    });
+
+    // Pre-fill from URL params or default to tomorrow & day after
+    const urlParams = new URLSearchParams(window.location.search);
+    const inParam = urlParams.get('checkIn');
+    const outParam = urlParams.get('checkOut');
+    if (inParam && outParam) {
+        fp.setDate([inParam, outParam], true);
+    } else {
+        const today = new Date();
+        const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfter = new Date(tomorrow); dayAfter.setDate(dayAfter.getDate() + 1);
+        fp.setDate([tomorrow, dayAfter], true);
+    }
+
+    // Restore draft if user just logged in
+    const savedHotelDraft = sessionStorage.getItem('hotel_booking_draft');
+    if (savedHotelDraft) {
+        try {
+            const draft = JSON.parse(savedHotelDraft);
+            if (draft.checkIn && draft.checkOut) {
+                fp.setDate([draft.checkIn, draft.checkOut], true);
+            }
+            if (draft.roomsCount) {
+                document.getElementById('roomsCount').value = draft.roomsCount;
+            }
+            if (draft.guestsCount) {
+                document.getElementById('guestsCount').value = draft.guestsCount;
+            }
+            sessionStorage.removeItem('hotel_booking_draft');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('resume') === '1') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đã khôi phục thông tin đặt phòng',
+                    text: 'Ngày lưu trú và số lượng phòng được giữ nguyên. Hãy bấm Đặt phòng ngay để tiếp tục thanh toán!',
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            }
+        } catch(e) {}
+    }
+
+    async function checkAvailability() {
+        if (!checkInStr || !checkOutStr) return;
+        
+        const rCount = parseInt(document.getElementById('roomsCount').value) || 1;
+        
+        document.querySelectorAll('.room-status').forEach(async el => {
+            const roomId = el.dataset.roomId;
+            const btn = el.closest('.flex').querySelector('.book-btn');
+            el.innerHTML = '<span class="text-amber-400">Đang kiểm tra...</span>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/rooms/${roomId}/availability?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
+                const data = await res.json();
+                
+                if (data.available >= rCount) {
+                    el.innerHTML = `✓ Còn <span class="text-white">${data.available}</span> phòng trống`;
+                    el.className = 'mt-3 text-xs font-bold text-emerald-400 room-status';
+                    btn.disabled = false;
+                } else {
+                    el.innerHTML = `❌ Chỉ còn ${data.available} phòng (Không đủ)`;
+                    el.className = 'mt-3 text-xs font-bold text-rose-400 room-status';
+                }
+            } catch (e) {
+                el.textContent = 'Lỗi kiểm tra';
+            }
+        });
+    }
+
+    document.getElementById('roomsCount').addEventListener('change', checkAvailability);
+
+    window.bookRoom = async (roomId) => {
+        if (!checkInStr || !checkOutStr) {
+            return Swal.fire('Thông báo', 'Vui lòng chọn ngày nhận và trả phòng', 'warning');
+        }
+        
+        const rCount = parseInt(document.getElementById('roomsCount').value) || 1;
+        const gCount = parseInt(document.getElementById('guestsCount').value) || 2;
+        
+        Swal.fire({title: 'Đang xử lý...', didOpen: () => Swal.showLoading()});
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        const payload = {
+            roomId: roomId,
+            checkIn: checkInStr,
+            checkOut: checkOutStr,
+            roomsCount: rCount,
+            guestsCount: gCount,
+            customerNote: ''
+        };
+
+        const res = await fetch('/api/bookings/hotel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.status === 401 || res.redirected || (res.url && res.url.includes('/login'))) {
+            sessionStorage.setItem('hotel_booking_draft', JSON.stringify(payload));
+            Swal.fire({
+                title: 'Yêu cầu đăng nhập để đặt phòng',
+                html: 'Thông tin phòng và ngày nghỉ bạn chọn đã được lưu lại.<br>Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục thanh toán.',
+                icon: 'info',
+                confirmButtonText: 'Đăng nhập / Đăng ký ngay',
+                confirmButtonColor: '#f59e0b',
+                showCancelButton: true,
+                cancelButtonText: 'Để sau'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + '?resume=1');
+                }
+            });
+            return;
+        }
+
+        const rawText = await res.text();
+        let data = {};
+        try {
+            data = JSON.parse(rawText);
+        } catch(e) {
+            if (rawText.includes('<!doctype') || rawText.includes('<html')) {
+                sessionStorage.setItem('hotel_booking_draft', JSON.stringify(payload));
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + '?resume=1');
+                return;
+            }
+        }
+        if (res.ok && data.bookingCode) {
+            window.location.href = '/checkout/' + data.bookingCode;
+        } else {
+            Swal.fire('Lỗi', data.error || 'Có lỗi xảy ra', 'error');
+        }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

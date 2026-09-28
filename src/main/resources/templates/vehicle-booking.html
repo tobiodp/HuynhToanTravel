@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Đặt Xe Đưa Đón - Huỳnh Toàn Travel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #031f32; color: #fff; }
+        .input-glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; }
+        .input-glass:focus { outline: none; border-color: rgba(245,158,11,0.5); background: rgba(255,255,255,0.1); }
+        .input-glass option { background: #031f32; color: #fff; }
+        .swal2-popup { background: #050e1c !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 24px !important; }
+        .swal2-title, .swal2-html-container { color: #fff !important; }
+    </style>
+</head>
+<body>
+<div class="scroll-progress"></div>
+<header class="site-header">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-6">
+    <a href="/" class="font-black text-xl flex items-center gap-2">
+      <span class="text-gradient-gold">HUYNH TOAN</span>
+      <span class="text-white/90">TRAVEL</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8">
+      <a href="/booking/vehicle" class="nav-link">Đặt Xe</a>
+      <a href="/tickets" class="nav-link">Vé Tham Quan</a>
+      <a href="/hotels" class="nav-link">Khách Sạn</a>
+    </nav>
+    <div class="hidden md:flex items-center gap-3">
+        <div th:if="${isLoggedIn}" class="flex items-center gap-3">
+            <a th:if="${isAdmin}" href="/admin" class="nav-link text-amber-400 font-bold flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/30 px-3.5 py-1.5 rounded-xl hover:bg-amber-400/20 transition">
+                <span>👑</span> Admin
+            </a>
+            <span class="text-xs font-semibold text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span th:text="${currentUserEmail}">user@gmail.com</span>
+            </span>
+            <form th:action="@{/logout}" method="post" class="inline">
+                <button type="submit" class="text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl hover:bg-rose-500/20 transition">Đăng xuất</button>
+            </form>
+        </div>
+        <div th:if="${!isLoggedIn}" class="flex items-center gap-3">
+            <a href="/register" class="text-xs font-bold text-slate-300 hover:text-amber-400 transition py-2">Đăng ký</a>
+            <a href="/login" class="btn-cta btn-cta-glass py-2 px-4 text-sm">
+                <span class="shine-sweep"></span>Đăng nhập
+            </a>
+        </div>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-7xl px-6 py-32">
+    <a href="javascript:history.back()" class="flex items-center gap-2 text-slate-400 hover:text-amber-400 transition text-sm font-semibold mb-6">← Quay lại</a>
+    
+    <div class="hero-eyebrow mb-4"><span>🚗</span> DỊCH VỤ ĐƯA ĐÓN</div>
+    <h1 class="section-heading mb-12">Đặt Xe Đưa Đón</h1>
+
+    <div class="grid gap-10 lg:grid-cols-12">
+        <div class="lg:col-span-8" data-aos="fade-up">
+            <form id="bookingForm" class="space-y-8 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md shadow-2xl">
+                <div id="errorBox" class="hidden rounded-xl bg-red-500/20 border border-red-500/50 p-4 text-sm text-red-200 font-medium"></div>
+
+                <div class="grid gap-6 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Tuyến Xe Du Lịch</label>
+                        <div class="relative">
+                            <select id="routeCode" name="routeCode" class="luxury-select input-glass rounded-xl pl-11 pr-4 py-3.5 w-full font-bold text-white text-sm focus:border-amber-400 appearance-none" required>
+                                <option value="">-- Chọn tuyến xe --</option>
+                                <option value="DAD_HOIAN" selected>🏖 Sân bay Đà Nẵng ↔ Phố Cổ Hội An</option>
+                                <option value="DAD_BANA">🚠 Đà Nẵng ↔ Sun World Bà Nà Hills</option>
+                                <option value="DAD_VINWONDERS">🎡 Đà Nẵng / Hội An ↔ VinWonders Nam Hội An</option>
+                                <option value="DAD_HUE">🏯 Đà Nẵng ↔ Cố Đô Huế (Qua Đèo Hải Vân)</option>
+                                <option value="DAD_MYSON">🏛 Đà Nẵng / Hội An ↔ Thánh Địa Mỹ Sơn</option>
+                                <option value="DAD_SONTRA">🐒 Đà Nẵng ↔ Tour Bán Đảo Sơn Trà & Linh Ứng</option>
+                                <option value="DAD_CITY">🏙 Sân bay Đà Nẵng ↔ Khách Sạn Nội Thành / Mỹ Khê</option>
+                            </select>
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none text-base">🗺️</span>
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Dòng Xe</label>
+                        <div class="relative">
+                            <select id="vehicleType" name="vehicleType" class="luxury-select input-glass rounded-xl pl-11 pr-4 py-3.5 w-full font-bold text-white text-sm focus:border-amber-400 appearance-none" required>
+                                <option value="SEDAN_4">🚗 Sedan 4 Chỗ (Vios, Accent, City)</option>
+                                <option value="SUV_7">🚙 SUV/MPV 7 Chỗ (Innova, Xpander)</option>
+                                <option value="VAN_16">🚐 Van 16 Chỗ (Transit, Solati)</option>
+                            </select>
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none text-base">🚘</span>
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Hình Thức Đi</label>
+                        <div class="relative">
+                            <select id="tripType" name="tripType" class="luxury-select input-glass rounded-xl pl-11 pr-4 py-3.5 w-full font-bold text-white text-sm focus:border-amber-400 appearance-none" required>
+                                <option value="ONE_WAY">➔ Một Chiều (Tiết kiệm)</option>
+                                <option value="ROUND_TRIP">⇄ Hai Chiều (Khứ Hồi Trọn Gói)</option>
+                            </select>
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none text-base">🔄</span>
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC CHỌN NGÀY GIỜ ĐÓN KHÁCH ĐƯỢC THIẾT KẾ LẠI -->
+                    <div class="sm:col-span-2 bg-black/30 border border-amber-400/25 rounded-2xl p-5 backdrop-blur shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <!-- Tiêu đề & Phím chọn nhanh -->
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400 text-lg shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                    📅
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-black text-white uppercase tracking-wider">Thời Gian Đón Khách</h4>
+                                    <p class="text-xs text-slate-400">Chọn ngày và giờ chính xác tài xế tới đón bạn</p>
+                                </div>
+                            </div>
+
+                            <!-- Quick Preset Chips -->
+                            <div class="flex flex-wrap gap-1.5 text-xs font-bold">
+                                <button type="button" onclick="setQuickTime(0, 2)" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-400 border border-white/10 hover:border-amber-400/30 transition flex items-center gap-1">
+                                    <span>⚡</span> Đón sớm nhất (+2h)
+                                </button>
+                                <button type="button" onclick="setQuickTime(1, 8, 0)" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-400 border border-white/10 hover:border-amber-400/30 transition flex items-center gap-1">
+                                    <span>🌅</span> Sáng mai (08:00)
+                                </button>
+                                <button type="button" onclick="setQuickTime(1, 14, 0)" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-400 border border-white/10 hover:border-amber-400/30 transition flex items-center gap-1">
+                                    <span>☀️</span> Chiều mai (14:00)
+                                </button>
+                                <button type="button" onclick="setQuickTime(2, 9, 0)" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-400 border border-white/10 hover:border-amber-400/30 transition flex items-center gap-1">
+                                    <span>🗓️</span> Ngày mốt (09:00)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2 Ô: Chọn Ngày (Flatpickr) & Chọn Giờ -->
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Ngày Đón</label>
+                                <div class="relative">
+                                    <input type="text" id="pickupDateDisplay" readonly placeholder="Chọn ngày đón..." class="input-glass rounded-xl pl-11 pr-4 py-3.5 w-full cursor-pointer font-bold text-white text-sm focus:border-amber-400" required>
+                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none text-base">🗓️</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Giờ Đón (Khởi hành)</label>
+                                <div class="relative">
+                                    <select id="pickupTimeSelect" class="luxury-select input-glass rounded-xl pl-11 pr-4 py-3.5 w-full cursor-pointer font-bold text-white text-sm focus:border-amber-400 appearance-none" required>
+                                        <!-- Javascript sẽ tự động tạo mốc giờ từ 05:00 đến 23:30 -->
+                                    </select>
+                                    <span class="icon-prefix absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none text-base">⏰</span>
+                                    <span class="icon-arrow absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input ẩn gửi giá trị chuẩn ISO cho máy chủ -->
+                        <input type="hidden" id="pickupAt" name="pickupAt" required>
+
+                        <!-- Thẻ xem trước thời gian trực quan sống động -->
+                        <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs">
+                            <div class="flex items-center gap-2 text-slate-300">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span>Lịch đón: <b id="previewDateTimeText" class="text-amber-400 font-bold">Chưa chọn</b></span>
+                            </div>
+                            <div id="relativeTimeBadge" class="text-slate-400 font-medium">
+                                Tài xế sẽ gọi xác nhận trước 30 phút • Miễn phí chờ tại sân bay (60p)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6 border-t border-white/10 pt-8">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-300 mb-2">Điểm Đón Cụ Thể</label>
+                        <input type="text" id="pickupAddress" name="pickupAddress" placeholder="Ví dụ: Sân bay quốc tế Đà Nẵng, Ga Quốc Nội (Chuyến bay VN123)" class="input-glass rounded-xl px-4 py-3.5 w-full" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-300 mb-2">Điểm Trả / Khách Sạn Đến</label>
+                        <input type="text" id="dropoffAddress" name="dropoffAddress" placeholder="Ví dụ: Khách sạn Silk Sense Hội An, 123 Cửa Đại" class="input-glass rounded-xl px-4 py-3.5 w-full" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-300 mb-2">Ghi Chú Thêm (Tùy chọn)</label>
+                        <textarea id="customerNote" name="customerNote" rows="3" placeholder="Ví dụ: Chuyến bay hạ cánh lúc 14:00, cần ghế trẻ em, hoặc yêu cầu giờ đón chiều về nếu đi khứ hồi..." class="input-glass rounded-xl px-4 py-3.5 w-full"></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="sticky top-28 mesh-gradient rounded-3xl p-8 border border-white/10 shadow-2xl">
+                <h3 class="text-xl font-black text-white mb-6">Tạm tính</h3>
+                <div class="flex items-center justify-between bg-black/20 rounded-2xl p-5 mb-8">
+                    <span class="text-sm font-medium text-slate-300">Tổng tiền:</span>
+                    <span id="priceDisplay" class="text-3xl font-black text-gradient-gold">0đ</span>
+                </div>
+                <button type="submit" form="bookingForm" id="submitBtn" disabled class="btn-cta btn-cta-gold w-full justify-center py-4 text-lg">
+                    <span class="shine-sweep"></span>Tiếp tục thanh toán →
+                </button>
+                
+                <ul class="mt-8 space-y-3 text-sm text-slate-300 font-medium">
+                    <li class="flex gap-2"><span class="text-amber-400">✓</span> Cam kết đón đúng giờ</li>
+                    <li class="flex gap-2"><span class="text-amber-400">✓</span> Miễn phí chờ tại sân bay (60 phút)</li>
+                    <li class="flex gap-2"><span class="text-amber-400">✓</span> Hỗ trợ hủy / dời lịch trước 4 tiếng</li>
+                    <li class="flex gap-2"><span class="text-amber-400">✓</span> Xe đời mới 2022 - 2024 sạch sẽ, máy lạnh</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    let rates = [];
+    const form = document.getElementById('bookingForm');
+    const routeEl = document.getElementById('routeCode');
+    const vehicleEl = document.getElementById('vehicleType');
+    const tripEl = document.getElementById('tripType');
+    const priceDisplay = document.getElementById('priceDisplay');
+    const errorBox = document.getElementById('errorBox');
+    const submitBtn = document.getElementById('submitBtn');
+    const pickupDateDisplay = document.getElementById('pickupDateDisplay');
+    const pickupTimeSelect = document.getElementById('pickupTimeSelect');
+    const pickupAtHidden = document.getElementById('pickupAt');
+    const previewDateTimeText = document.getElementById('previewDateTimeText');
+    const relativeTimeBadge = document.getElementById('relativeTimeBadge');
+
+    // 1. Tạo danh sách các mốc giờ 30 phút từ 05:00 đến 23:30
+    function populateTimeSlots() {
+        pickupTimeSelect.innerHTML = '';
+        for (let h = 5; h <= 23; h++) {
+            for (let m of [0, 30]) {
+                const hh = String(h).padStart(2, '0');
+                const mm = String(m).padStart(2, '0');
+                const val = `${hh}:${mm}`;
+                const opt = document.createElement('option');
+                opt.value = val;
+                let period = 'Sáng';
+                if (h >= 11 && h < 14) period = 'Trưa';
+                else if (h >= 14 && h < 18) period = 'Chiều';
+                else if (h >= 18) period = 'Tối';
+                opt.textContent = `${val} (${period})`;
+                pickupTimeSelect.appendChild(opt);
+            }
+        }
+    }
+    populateTimeSlots();
+
+    // 2. Khởi tạo Flatpickr giao diện Tiếng Việt cho Ngày Đón
+    let selectedDateStr = '';
+    const fp = flatpickr(pickupDateDisplay, {
+        locale: "vn",
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "l, d/m/Y",
+        altInputClass: "input-glass rounded-xl pl-11 pr-4 py-3.5 w-full cursor-pointer font-bold text-white text-sm focus:border-amber-400",
+        defaultDate: new Date(),
+        onChange: function(selectedDates, dateStr) {
+            selectedDateStr = dateStr;
+            syncPickupAt();
+        }
+    });
+
+    // Mặc định chọn ngày hôm nay
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    selectedDateStr = `${yyyy}-${mm}-${dd}`;
+
+    // Chọn mốc giờ mặc định sau thời điểm hiện tại khoảng 2 tiếng
+    let defaultHour = today.getHours() + 2;
+    if (defaultHour > 23) defaultHour = 23;
+    const defaultMinute = today.getMinutes() > 30 ? "00" : "30";
+    const defaultTimeStr = `${String(defaultHour).padStart(2, '0')}:${defaultMinute}`;
+    if (Array.from(pickupTimeSelect.options).some(o => o.value === defaultTimeStr)) {
+        pickupTimeSelect.value = defaultTimeStr;
+    } else {
+        pickupTimeSelect.selectedIndex = 0;
+    }
+    pickupTimeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Đồng bộ ngày giờ vào trường ẩn và hiển thị thẻ xem trước
+    function syncPickupAt() {
+        const timeVal = pickupTimeSelect.value || "08:00";
+        if (!selectedDateStr) return;
+
+        pickupAtHidden.value = `${selectedDateStr}T${timeVal}:00`;
+
+        // Format preview text
+        const [y, m, d] = selectedDateStr.split('-').map(Number);
+        const [h, min] = timeVal.split(':').map(Number);
+        const targetDate = new Date(y, m - 1, d, h, min);
+
+        const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        const dayName = days[targetDate.getDay()];
+        previewDateTimeText.textContent = `${timeVal} • ${dayName}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+
+        // Tính khoảng thời gian tương đối
+        const diffMs = targetDate.getTime() - new Date().getTime();
+        if (diffMs > 0) {
+            const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+            if (diffHours < 24) {
+                relativeTimeBadge.textContent = `🚀 Khởi hành sau khoảng ${diffHours} tiếng nữa`;
+            } else {
+                const diffDays = Math.round(diffHours / 24);
+                relativeTimeBadge.textContent = `🗓️ Cách hiện tại ${diffDays} ngày`;
+            }
+        } else {
+            relativeTimeBadge.textContent = `⚠️ Thời gian đón cần sau thời điểm hiện tại`;
+        }
+    }
+
+    pickupTimeSelect.addEventListener('change', syncPickupAt);
+    syncPickupAt();
+
+    // Phím tắt thời gian thông minh
+    window.setQuickTime = function(daysOffset, hours, minutes = 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + daysOffset);
+
+        if (hours === undefined) {
+            // Đón sớm nhất (+2h)
+            d.setHours(d.getHours() + 2);
+        } else {
+            d.setHours(hours, minutes, 0, 0);
+        }
+
+        fp.setDate(d, true);
+
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = d.getMinutes() >= 30 ? '30' : '00';
+        const targetTime = `${hh}:${mm}`;
+
+        if (Array.from(pickupTimeSelect.options).some(o => o.value === targetTime)) {
+            pickupTimeSelect.value = targetTime;
+            pickupTimeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        syncPickupAt();
+    };
+
+    // 3. Tải danh sách tuyến xe động từ API
+    fetch('/api/vehicle-rates')
+        .then(res => res.json())
+        .then(data => {
+            rates = data;
+            
+            // Tự động gom nhóm các tuyến xe duy nhất để hiển thị vào select
+            const routeMap = new Map();
+            rates.forEach(r => {
+                if (!routeMap.has(r.routeCode)) {
+                    routeMap.set(r.routeCode, r.routeName);
+                }
+            });
+
+            if (routeMap.size > 0) {
+                const currentVal = routeEl.value;
+                routeEl.innerHTML = '<option value="">-- Chọn tuyến xe --</option>';
+                routeMap.forEach((name, code) => {
+                    const opt = document.createElement('option');
+                    opt.value = code;
+                    opt.textContent = name;
+                    routeEl.appendChild(opt);
+                });
+                if (currentVal && routeMap.has(currentVal)) {
+                    routeEl.value = currentVal;
+                } else if (routeMap.has("DAD_HOIAN")) {
+                    routeEl.value = "DAD_HOIAN";
+                } else {
+                    routeEl.selectedIndex = 1;
+                }
+                routeEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            // Đọc tham số từ URL khi người dùng chuyển từ Quick Search trang chủ
+            const urlParams = new URLSearchParams(window.location.search);
+            const pRoute = urlParams.get('route');
+            const pVehicle = urlParams.get('vehicle');
+            const pTrip = urlParams.get('trip');
+
+            if (pRoute && routeMap.has(pRoute)) {
+                routeEl.value = pRoute;
+                routeEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (pVehicle && Array.from(vehicleEl.options).some(o => o.value === pVehicle)) {
+                vehicleEl.value = pVehicle;
+                vehicleEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            // Khôi phục bản nháp nếu khách vừa đăng nhập quay lại
+            const savedDraft = sessionStorage.getItem('vehicle_booking_draft');
+            if (savedDraft) {
+                try {
+                    const draft = JSON.parse(savedDraft);
+                    if (draft.routeCode && routeMap.has(draft.routeCode)) {
+                        routeEl.value = draft.routeCode;
+                        routeEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (draft.vehicleType) {
+                        vehicleEl.value = draft.vehicleType;
+                        vehicleEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (draft.tripType) {
+                        tripEl.value = draft.tripType;
+                        tripEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (draft.pickupAddress) document.getElementById('pickupAddress').value = draft.pickupAddress;
+                    if (draft.dropoffAddress) document.getElementById('dropoffAddress').value = draft.dropoffAddress;
+                    if (draft.customerNote) document.getElementById('customerNote').value = draft.customerNote;
+                    if (draft.pickupAt) {
+                        const parts = draft.pickupAt.split('T');
+                        if (parts.length === 2) {
+                            fp.setDate(parts[0], true);
+                            const t = parts[1].substring(0, 5);
+                            if (Array.from(pickupTimeSelect.options).some(o => o.value === t)) {
+                                pickupTimeSelect.value = t;
+                                pickupTimeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                            syncPickupAt();
+                        }
+                    }
+                    sessionStorage.removeItem('vehicle_booking_draft');
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('resume') === '1') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Đã khôi phục thông tin chuyến xe',
+                            text: 'Thông tin bạn đã điền được giữ nguyên trọn vẹn. Bấm Tiếp tục thanh toán để hoàn tất!',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                    }
+                } catch(e) {}
+            }
+
+            calculatePrice();
+        })
+        .catch(err => console.error("Lỗi khi tải giá xe:", err));
+
+    function calculatePrice() {
+        const route = routeEl.value;
+        const vehicle = vehicleEl.value;
+        const trip = tripEl.value;
+        const rate = rates.find(r => r.routeCode === route && r.vehicleType === vehicle && r.tripType === trip);
+        
+        if (rate) {
+            priceDisplay.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(rate.price);
+            submitBtn.disabled = false;
+        } else {
+            priceDisplay.textContent = "Liên hệ báo giá";
+            submitBtn.disabled = true;
+        }
+    }
+
+    routeEl.addEventListener('change', calculatePrice);
+    vehicleEl.addEventListener('change', calculatePrice);
+    tripEl.addEventListener('change', calculatePrice);
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        errorBox.classList.add('hidden');
+
+        if (!pickupAtHidden.value) {
+            errorBox.textContent = "Vui lòng chọn ngày và giờ đón";
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        const payload = {
+            routeCode: routeEl.value,
+            vehicleType: vehicleEl.value,
+            tripType: tripEl.value,
+            pickupAddress: document.getElementById('pickupAddress').value,
+            dropoffAddress: document.getElementById('dropoffAddress').value,
+            pickupAt: pickupAtHidden.value,
+            customerNote: document.getElementById('customerNote').value
+        };
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="shine-sweep"></span>Đang xử lý đặt xe...';
+
+        fetch('/api/bookings/vehicle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (res.status === 401 || res.redirected || (res.url && res.url.includes('/login'))) {
+                sessionStorage.setItem('vehicle_booking_draft', JSON.stringify(payload));
+                Swal.fire({
+                    title: 'Yêu cầu đăng nhập để thanh toán',
+                    html: 'Thông tin chuyến xe bạn vừa chọn đã được lưu lại.<br>Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục thanh toán.',
+                    icon: 'info',
+                    confirmButtonText: 'Đăng nhập / Đăng ký ngay',
+                    confirmButtonColor: '#f59e0b',
+                    showCancelButton: true,
+                    cancelButtonText: 'Để sau'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/login?redirect=' + encodeURIComponent('/booking/vehicle?resume=1');
+                    }
+                });
+                throw new Error("Unauthorized");
+            }
+            if (res.status === 403) throw new Error("Bạn không có quyền thực hiện thao tác này. Hãy thử đăng nhập lại.");
+            return res.text().then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (!res.ok) throw new Error(data.error || "Có lỗi xảy ra");
+                    return data;
+                } catch(e) {
+                    if (text.includes('<!doctype') || text.includes('<html')) {
+                        sessionStorage.setItem('vehicle_booking_draft', JSON.stringify(payload));
+                        window.location.href = '/login?redirect=' + encodeURIComponent('/booking/vehicle?resume=1');
+                        throw new Error("Unauthorized");
+                    }
+                    throw e;
+                }
+            });
+        })
+        .then(data => { if (data.bookingCode) window.location.href = '/checkout/' + data.bookingCode; })
+        .catch(err => {
+            if(err.message !== "Unauthorized") {
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+            }
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="shine-sweep"></span>Tiếp tục thanh toán →';
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.32/bundled/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Thanh toán đơn hàng | Huỳnh Toàn Travel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+    <link rel="stylesheet" th:href="@{/css/design.css}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #031f32; color: #fff; }
+        .swal2-popup { background: #050e1c !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 24px !important; }
+        .swal2-title, .swal2-html-container { color: #fff !important; }
+        
+        /* Active deposit button styling */
+        .btn-pay-option {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-pay-option.active {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%);
+            border-color: rgba(245, 158, 11, 0.8);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+        }
+
+        /* Pulsing indicator */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+        .pulse-live {
+            animation: pulse-dot 1.8s infinite ease-in-out;
+        }
+
+        /* QR Frame Glow */
+        .qr-card-glow {
+            box-shadow: 0 10px 40px -10px rgba(245, 158, 11, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Copy Button Tooltip Animation */
+        .copy-btn:active {
+            transform: scale(0.94);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+<div class="scroll-progress"></div>
+
+<!-- Top Navigation -->
+<header class="py-5 px-6 md:px-10 border-b border-white/5 backdrop-blur-md sticky top-0 z-50 bg-[#031f32]/80">
+    <div class="mx-auto flex max-w-6xl items-center justify-between">
+        <a href="/" class="font-black text-xl flex items-center gap-2">
+            <span class="text-gradient-gold">HUYNH TOAN</span>
+            <span class="text-white/90">TRAVEL</span>
+        </a>
+        <a href="/" class="text-xs md:text-sm font-bold text-slate-400 hover:text-amber-400 transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span>VỀ TRANG CHỦ</span>
+        </a>
+    </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-4 md:px-6 py-10 flex-grow w-full">
+    <!-- Breadcrumbs / Steps -->
+    <div class="mb-8 flex items-center gap-3 text-xs uppercase tracking-widest text-slate-400 font-bold">
+        <span>1. Chọn dịch vụ</span>
+        <span class="text-slate-600">/</span>
+        <span class="text-amber-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+            2. Thanh toán SePay
+        </span>
+        <span class="text-slate-600">/</span>
+        <span class="text-slate-500">3. Nhận vé & Xác nhận</span>
+    </div>
+
+    <!-- Error notice if order not found -->
+    <div th:if="${error != null}" class="rounded-3xl bg-red-500/15 border border-red-500/30 p-6 text-red-200 font-medium mb-8">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">⚠️</span>
+            <div>
+                <b class="text-white text-lg block" th:text="${error}">Lỗi đơn hàng</b>
+                <span class="text-sm text-slate-300">Vui lòng kiểm tra lại đường dẫn hoặc tạo yêu cầu đặt dịch vụ mới.</span>
+            </div>
+        </div>
+        <a href="/" class="inline-block mt-4 text-xs font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 transition">← Về trang chủ</a>
+    </div>
+
+    <!-- Main Payment Container -->
+    <div th:if="${booking != null}" class="grid gap-8 lg:grid-cols-[1fr_.85fr]">
+        
+        <!-- Left Column: Booking Details & Payment Option -->
+        <section class="space-y-6" data-aos="fade-right">
+            
+            <!-- Order Info Card -->
+            <div class="rounded-3xl bg-white/5 p-6 md:p-8 shadow-2xl backdrop-blur border border-white/10">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-black text-white">Thanh Toán Đơn Hàng</h1>
+                        <p class="text-slate-400 text-sm mt-1">Kiểm tra thông tin chi tiết các dịch vụ đã đăng ký.</p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <span class="text-xs uppercase tracking-wider text-slate-400 block font-bold mb-1">Mã đơn hàng</span>
+                        <span class="bg-amber-400/20 border border-amber-400/40 text-amber-300 font-black px-4 py-1.5 rounded-full text-base tracking-wider inline-block" id="displayBookingCode" th:text="${bookingCode}">HT123456</span>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ Khách sạn -->
+                <div th:if="${!booking.roomBookings.isEmpty()}" class="mt-6 rounded-2xl bg-black/25 p-5 border border-white/5">
+                    <div class="font-black text-white flex items-center gap-3 mb-3">
+                        <span class="bg-indigo-500/20 p-2 rounded-xl text-indigo-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        </span>
+                        <span>Khách Sạn & Nghỉ Dưỡng</span>
+                    </div>
+                    <div th:each="rb : ${booking.roomBookings}" class="text-sm bg-white/5 p-4 rounded-xl border border-white/5 space-y-1.5">
+                        <p class="text-base font-bold text-amber-400" th:text="${rb.room.hotel.name}">Tên khách sạn</p>
+                        <p class="text-white font-medium" th:text="${rb.room.roomType}">Loại phòng</p>
+                        <p class="text-slate-400 text-xs">Từ <b class="text-white" th:text="${rb.checkIn}"></b> đến <b class="text-white" th:text="${rb.checkOut}"></b> (<span class="text-amber-400 font-bold" th:text="${rb.nights}"></span> đêm) • <span class="text-white" th:text="${rb.roomsCount}"></span> phòng, <span class="text-white" th:text="${rb.guestsCount}"></span> khách</p>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ Vé Tham Quan -->
+                <div th:if="${!booking.ticketBookings.isEmpty()}" class="mt-4 rounded-2xl bg-black/25 p-5 border border-white/5">
+                    <div class="font-black text-white flex items-center gap-3 mb-3">
+                        <span class="bg-emerald-500/20 p-2 rounded-xl text-emerald-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                        </span>
+                        <span>Vé Vui Chơi & Tham Quan</span>
+                    </div>
+                    <ul class="text-sm space-y-2">
+                        <li th:each="tb : ${booking.ticketBookings}" class="flex justify-between items-center bg-white/5 p-3.5 rounded-xl border border-white/5">
+                            <div>
+                                <div class="font-bold text-white text-base" th:text="${tb.ticketType}">Vé Bà Nà Hills</div>
+                                <div class="text-xs text-slate-400 mt-1">
+                                    Ngày đi: <b class="text-amber-300" th:text="${tb.serviceDate}"></b>
+                                    <span th:if="${tb.localResident}" class="ml-2 text-emerald-400 font-semibold">• Giá người địa phương</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-400">Số lượng: <b class="text-white text-sm" th:text="${tb.quantity}">1</b></div>
+                                <div class="text-base font-black text-gradient-gold mt-0.5" th:text="${#numbers.formatInteger(tb.lineTotal,3,'POINT') + ' ₫'}"></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Dịch vụ Xe Đưa Đón -->
+                <div th:if="${!booking.vehicleBookings.isEmpty()}" class="mt-4 rounded-2xl bg-black/25 p-5 border border-white/5">
+                    <div class="font-black text-white flex items-center gap-3 mb-3">
+                        <span class="bg-sky-500/20 p-2 rounded-xl text-sky-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+                        </span>
+                        <span>Xe Đưa Đón Du Lịch</span>
+                    </div>
+                    <div th:each="vb : ${booking.vehicleBookings}" class="text-sm bg-white/5 p-4 rounded-xl border border-white/5 space-y-1">
+                        <p class="font-bold text-amber-400 text-base"><span th:text="${vb.routeName}">Tuyến</span> (<span class="text-white" th:text="${vb.vehicleType}"></span>)</p>
+                        <p class="text-slate-400 text-xs">Đón lúc: <b class="text-white" th:text="${#temporals.format(vb.pickupAt, 'dd/MM/yyyy HH:mm')}"></b></p>
+                        <p class="text-slate-400 text-xs">Điểm đón: <span class="text-white" th:text="${vb.pickupAddress}"></span> ➔ <span class="text-white" th:text="${vb.dropoffAddress}"></span></p>
+                    </div>
+                </div>
+
+                <!-- Tổng Tiền & Ghi Chú -->
+                <div class="mt-6 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                    <div class="text-xs text-slate-400 max-w-sm">
+                        <span class="font-bold text-slate-300 block mb-1">Ghi chú từ khách:</span>
+                        <span class="italic text-slate-300" th:text="${booking.customerNote != null && !booking.customerNote.isEmpty() ? booking.customerNote : 'Không có ghi chú'}">Không có</span>
+                    </div>
+                    <div class="bg-black/30 p-4 rounded-2xl border border-white/10 w-full sm:w-auto text-left sm:text-right">
+                        <span class="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-1">Tổng giá trị đơn</span>
+                        <span class="text-3xl font-black text-gradient-gold" id="totalGrandDisplay" th:text="${#numbers.formatInteger(booking.grandTotal,3,'POINT') + ' ₫'}">1.000.000 ₫</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deposit Selection Card -->
+            <div class="rounded-3xl bg-white/5 p-6 md:p-8 shadow-2xl backdrop-blur border border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-black text-xl text-white">Chọn Hình Thức Thanh Toán</h3>
+                    <span class="text-xs text-amber-400 font-bold bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">Linh hoạt</span>
+                </div>
+                <p class="text-sm text-slate-300 mb-6">Bạn có thể chọn thanh toán 100% để hoàn tất ngay, hoặc đặt cọc trước để giữ dịch vụ.</p>
+
+                <input type="hidden" id="bookingCode" th:value="${bookingCode}">
+                <input type="hidden" id="grandTotalRaw" th:value="${booking.grandTotal}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <!-- Option 100% -->
+                    <button type="button" class="btn-pay-option active rounded-2xl border border-white/15 bg-white/5 p-4 text-left cursor-pointer hover:border-amber-400/50 transition relative overflow-hidden" data-pct="100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-black text-white text-base">Trả 100%</span>
+                            <span class="w-3 h-3 rounded-full bg-amber-400 indicator-dot"></span>
+                        </div>
+                        <p class="text-xs text-slate-400">Toàn bộ giá trị đơn</p>
+                        <div class="text-amber-400 font-extrabold text-sm mt-3" id="opt100Price">... ₫</div>
+                    </button>
+
+                    <!-- Option 50% -->
+                    <button type="button" class="btn-pay-option rounded-2xl border border-white/15 bg-white/5 p-4 text-left cursor-pointer hover:border-amber-400/50 transition relative overflow-hidden" data-pct="50">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-black text-white text-base">Cọc 50%</span>
+                            <span class="w-3 h-3 rounded-full bg-slate-600 indicator-dot"></span>
+                        </div>
+                        <p class="text-xs text-slate-400">Giữ chỗ dịch vụ</p>
+                        <div class="text-slate-300 font-extrabold text-sm mt-3" id="opt50Price">... ₫</div>
+                    </button>
+
+                    <!-- Option 30% -->
+                    <button type="button" class="btn-pay-option rounded-2xl border border-white/15 bg-white/5 p-4 text-left cursor-pointer hover:border-amber-400/50 transition relative overflow-hidden" data-pct="30">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-black text-white text-base">Cọc 30%</span>
+                            <span class="w-3 h-3 rounded-full bg-slate-600 indicator-dot"></span>
+                        </div>
+                        <p class="text-xs text-slate-400">Mức cọc tối thiểu</p>
+                        <div class="text-slate-300 font-extrabold text-sm mt-3" id="opt30Price">... ₫</div>
+                    </button>
+                </div>
+
+                <!-- Price summary banner -->
+                <div class="mt-6 rounded-2xl bg-amber-500/10 border border-amber-500/25 p-4.5 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="text-xs text-slate-300">
+                        Số tiền thanh toán đợt này: <b class="text-amber-400 text-sm ml-1" id="currentPayAmountText">Đang tính...</b>
+                        <span id="remainingText" class="block text-slate-400 mt-0.5 text-xs"></span>
+                    </div>
+                    <div class="text-xs text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block pulse-live"></span>
+                        <span>SePay tự động khớp đơn</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Safe payment badges -->
+            <div class="grid grid-cols-3 gap-3 text-center text-xs text-slate-400">
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-lg mb-1">⚡</div>
+                    <b class="text-white block mb-0.5">Xác nhận tức thì</b>
+                    <span>Tự động trong 3-10s</span>
+                </div>
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-lg mb-1">🔒</div>
+                    <b class="text-white block mb-0.5">Bảo mật chuẩn NAPAS</b>
+                    <span>Chuyển tiền trực tiếp</span>
+                </div>
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="text-lg mb-1">🎟️</div>
+                    <b class="text-white block mb-0.5">Xuất vé điện tử</b>
+                    <span>Cấp mã QR vé tức thì</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: SePay VietQR Payment Card -->
+        <aside class="h-fit lg:sticky lg:top-24" data-aos="fade-left">
+            <div class="rounded-3xl mesh-gradient p-6 md:p-8 text-white shadow-2xl border border-white/10 qr-card-glow">
+                
+                <!-- Card Header -->
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-black text-sm">
+                            QR
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-black text-white">Quét Mã VietQR</h2>
+                            <p class="text-xs text-slate-300">Tự động xác nhận qua SePay</p>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block pulse-live"></span>
+                        VietQR 24/7
+                    </span>
+                </div>
+
+                <!-- QR Display Container -->
+                <div class="mt-4 aspect-square max-w-[290px] mx-auto rounded-3xl bg-white p-4 relative overflow-hidden shadow-2xl flex flex-col items-center justify-center border-4 border-white/80">
+                    <img id="qrImage" class="w-full h-full object-contain rounded-xl" alt="Mã VietQR thanh toán SePay">
+                    <div id="qrLoading" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center p-4 text-center">
+                        <div class="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+                        <span class="text-xs text-slate-600 font-bold">Đang tạo mã VietQR SePay...</span>
+                    </div>
+                </div>
+
+                <!-- Action under QR: Download QR & Guide -->
+                <div class="mt-4 flex items-center justify-center gap-3">
+                    <a id="downloadQrBtn" href="#" download="VietQR_HuynhToanTravel.png" target="_blank" class="text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/15 px-4 py-2 rounded-xl text-white transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Tải ảnh mã QR</span>
+                    </a>
+                    <button type="button" onclick="showBankAppsModal()" class="text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/15 px-4 py-2 rounded-xl text-white transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        <span>App ngân hàng</span>
+                    </button>
+                </div>
+
+                <!-- Bank Transfer Details with 1-Click Copy -->
+                <div class="mt-6 space-y-2.5 text-xs">
+                    <!-- Ngân hàng -->
+                    <div class="flex justify-between items-center py-2.5 px-3.5 rounded-xl bg-black/25 border border-white/5">
+                        <span class="text-slate-400 font-medium">Ngân hàng:</span>
+                        <b class="text-white font-bold" id="bankNameDisplay">MB Bank</b>
+                    </div>
+
+                    <!-- Chủ tài khoản -->
+                    <div class="flex justify-between items-center py-2.5 px-3.5 rounded-xl bg-black/25 border border-white/5">
+                        <span class="text-slate-400 font-medium">Chủ tài khoản:</span>
+                        <b class="text-white font-bold uppercase" id="accountNameDisplay">HUYNH TOAN TRAVEL</b>
+                    </div>
+
+                    <!-- Số tài khoản + Copy -->
+                    <div class="flex justify-between items-center py-2 px-3.5 rounded-xl bg-black/25 border border-white/5">
+                        <span class="text-slate-400 font-medium">Số tài khoản:</span>
+                        <div class="flex items-center gap-2">
+                            <b class="text-amber-300 text-sm font-black tracking-wider" id="accountNoDisplay">...</b>
+                            <button type="button" onclick="copyField('accountNoDisplay', 'Số tài khoản')" class="copy-btn px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold transition flex items-center gap-1 text-[11px]">
+                                <span>Sao chép</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Số tiền + Copy -->
+                    <div class="flex justify-between items-center py-2 px-3.5 rounded-xl bg-black/25 border border-white/5">
+                        <span class="text-slate-400 font-medium">Số tiền chuyển:</span>
+                        <div class="flex items-center gap-2">
+                            <b class="text-gradient-gold text-base font-black" id="amountDisplay">0 ₫</b>
+                            <button type="button" onclick="copyAmount()" class="copy-btn px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold transition flex items-center gap-1 text-[11px]">
+                                <span>Sao chép</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nội dung chuyển khoản + Highlight BẮT BUỘC -->
+                    <div class="py-2.5 px-3.5 rounded-xl bg-amber-400/10 border border-amber-400/30">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-amber-300 font-bold">Nội dung CK (BẮT BUỘC):</span>
+                            <button type="button" onclick="copyField('transferContentDisplay', 'Nội dung chuyển khoản')" class="copy-btn px-2.5 py-1 rounded-lg bg-amber-400 text-slate-900 font-black hover:bg-amber-300 transition text-[11px] shadow-sm">
+                                <span>Sao chép</span>
+                            </button>
+                        </div>
+                        <div class="text-base font-black text-amber-300 tracking-widest text-center py-1 bg-black/30 rounded-lg border border-amber-400/20" id="transferContentDisplay">...</div>
+                        <p class="text-[11px] text-amber-200/80 mt-1.5 leading-relaxed text-center">
+                            ⚠️ Giữ nguyên nội dung này để SePay tự động kích hoạt vé ngay lập tức.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Live Status Bar -->
+                <div class="mt-6 pt-5 border-t border-white/10">
+                    <div id="statusBox" class="rounded-2xl bg-black/30 border border-white/10 p-4 text-center">
+                        <div class="flex items-center justify-center gap-2 mb-1">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 pulse-live"></span>
+                            <span class="text-xs uppercase tracking-wider text-amber-300 font-extrabold" id="statusTitle">Đang chờ thanh toán qua SePay</span>
+                        </div>
+                        <p class="text-xs text-slate-300" id="statusSub">Hệ thống đang tự động kiểm tra giao dịch mỗi 2 giây...</p>
+                    </div>
+
+                    <!-- Manual check button -->
+                    <button type="button" id="manualCheckBtn" onclick="checkStatusOnce()" class="mt-3 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-slate-200 transition flex items-center justify-center gap-2">
+                        <svg id="refreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Tôi đã chuyển tiền (Kiểm tra ngay)</span>
+                    </button>
+
+                    <!-- DEV Simulation Button (For local test without real money) -->
+                    <div class="mt-4 pt-4 border-t border-white/5">
+                        <button type="button" id="devMockBtn" class="w-full rounded-xl bg-indigo-600/40 hover:bg-indigo-600/60 border border-indigo-400/40 py-2.5 px-3 text-xs font-bold text-indigo-200 transition flex items-center justify-center gap-2 shadow-sm">
+                            <span>🚀 Giả lập thanh toán SePay (DEV TEST)</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+    </div>
+</main>
+
+<footer class="py-6 text-center text-xs text-slate-500 border-t border-white/5 mt-12">
+    © 2026 Huỳnh Toàn Travel. Cổng thanh toán tự động qua SePay & VietQR 24/7.
+</footer>
+
+<!-- Bank Apps Guide Modal -->
+<div id="bankModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="rounded-3xl bg-[#050e1c] border border-white/15 p-6 max-w-md w-full shadow-2xl" data-aos="zoom-in">
+        <div class="flex items-center justify-between mb-4">
+            <h4 class="font-black text-lg text-white">Hướng dẫn quét mã</h4>
+            <button onclick="closeBankModal()" class="text-slate-400 hover:text-white text-xl">✕</button>
+        </div>
+        <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+            Hệ thống hỗ trợ quét mã VietQR qua tất cả các ứng dụng ngân hàng và ví điện tử tại Việt Nam:
+        </p>
+        <div class="grid grid-cols-3 gap-2.5 text-center text-xs mb-6">
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">MB Bank</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">Vietcombank</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">Techcombank</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">VietinBank</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">VPBank</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">TPBank</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">BIDV</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">ACB</div>
+            <div class="bg-white/5 p-2.5 rounded-xl border border-white/5 font-semibold text-white">MoMo / VNPay</div>
+        </div>
+        <div class="space-y-2 text-xs text-slate-300 bg-black/30 p-3.5 rounded-xl border border-white/5">
+            <p><b>Bước 1:</b> Mở app ngân hàng bất kỳ trên điện thoại.</p>
+            <p><b>Bước 2:</b> Chọn tính năng <b>Quét mã QR</b>.</p>
+            <p><b>Bước 3:</b> Quét mã hiển thị trên màn hình (hoặc bấm nút "Tải ảnh mã QR" nếu thanh toán trên cùng điện thoại).</p>
+            <p><b>Bước 4:</b> Xác nhận chuyển tiền. Hệ thống SePay sẽ tự động khớp lệnh sau 3-10 giây!</p>
+        </div>
+        <button onclick="closeBankModal()" class="w-full mt-5 py-3 rounded-xl bg-amber-400 text-slate-900 font-black text-xs hover:bg-amber-300 transition">
+            Đã hiểu
+        </button>
+    </div>
+</div>
+
+<script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+    
+    let timer = null;
+    let currentAmount = 0;
+    let currentPercent = 100;
+    let rawGrandTotal = parseInt(document.getElementById('grandTotalRaw')?.value || '0', 10);
+    const bookingCode = document.getElementById('bookingCode')?.value?.trim()?.toUpperCase() || '';
+
+    // Calculate options preview prices
+    if (rawGrandTotal > 0) {
+        document.getElementById('opt100Price').innerText = new Intl.NumberFormat('vi-VN').format(rawGrandTotal) + ' ₫';
+        document.getElementById('opt50Price').innerText = new Intl.NumberFormat('vi-VN').format(Math.round(rawGrandTotal * 0.5)) + ' ₫';
+        document.getElementById('opt30Price').innerText = new Intl.NumberFormat('vi-VN').format(Math.round(rawGrandTotal * 0.3)) + ' ₫';
+    }
+
+    // Handle deposit percentage selection
+    document.querySelectorAll('.btn-pay-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.btn-pay-option').forEach(b => {
+                b.classList.remove('active');
+                b.querySelector('.indicator-dot')?.classList.replace('bg-amber-400', 'bg-slate-600');
+            });
+            btn.classList.add('active');
+            btn.querySelector('.indicator-dot')?.classList.replace('bg-slate-600', 'bg-amber-400');
+            currentPercent = parseInt(btn.dataset.pct, 10);
+            updatePaymentIntent(currentPercent);
+        });
+    });
+
+    // Create payment intent & load QR from SePay/VietQR
+    async function updatePaymentIntent(percent) {
+        if (!bookingCode) return;
+        
+        const qrImg = document.getElementById('qrImage');
+        const qrLoading = document.getElementById('qrLoading');
+        qrLoading.classList.remove('hidden');
+
+        try {
+            const res = await fetch(`/api/checkout/${encodeURIComponent(bookingCode)}/payment-intent?percent=${percent}`, {
+                method: 'POST',
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            });
+
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Lỗi khởi tạo thanh toán' }));
+                qrLoading.classList.add('hidden');
+                return Swal.fire('Lỗi', err.error || 'Không thể tạo yêu cầu thanh toán', 'error');
+            }
+
+            const data = await res.json();
+            currentAmount = data.amount;
+
+            // Update QR image
+            qrImg.onload = () => {
+                qrLoading.classList.add('hidden');
+            };
+            qrImg.src = data.qrUrl;
+            document.getElementById('downloadQrBtn').href = data.qrUrl;
+
+            // Update bank details card
+            document.getElementById('bankNameDisplay').innerText = data.bankName || data.bankId || 'Ngân hàng MB';
+            document.getElementById('accountNameDisplay').innerText = data.accountName || 'HUYNH TOAN TRAVEL';
+            document.getElementById('accountNoDisplay').innerText = data.accountNo || '0000000000';
+            document.getElementById('amountDisplay').innerText = new Intl.NumberFormat('vi-VN').format(data.amount) + ' ₫';
+            document.getElementById('transferContentDisplay').innerText = data.transferContent || bookingCode;
+
+            // Update price summary banner
+            document.getElementById('currentPayAmountText').innerText = new Intl.NumberFormat('vi-VN').format(data.amount) + ' ₫';
+            const remaining = Math.max(0, rawGrandTotal - data.amount);
+            const remEl = document.getElementById('remainingText');
+            if (percent < 100 && remaining > 0) {
+                remEl.innerText = `Còn lại ${new Intl.NumberFormat('vi-VN').format(remaining)} ₫ thanh toán khi nhận dịch vụ.`;
+            } else {
+                remEl.innerText = 'Thanh toán trọn gói 1 lần.';
+            }
+
+            // Start polling status
+            startPolling(bookingCode);
+
+        } catch (e) {
+            console.error('Lỗi kết nối thanh toán:', e);
+            qrLoading.classList.add('hidden');
+        }
+    }
+
+    // Polling booking status every 2 seconds
+    function startPolling(code) {
+        if (timer) clearInterval(timer);
+        timer = setInterval(() => checkStatus(code), 2000);
+    }
+
+    async function checkStatus(code) {
+        try {
+            const res = await fetch(`/api/bookings/${encodeURIComponent(code)}/status`);
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            if (['DEPOSITED', 'PAID_FULL'].includes(data.status)) {
+                clearInterval(timer);
+                
+                // Update UI state to success
+                const statusBox = document.getElementById('statusBox');
+                statusBox.className = 'rounded-2xl bg-emerald-500/15 border border-emerald-500/30 p-4 text-center';
+                document.getElementById('statusTitle').innerText = 'ĐÃ NHẬN THANH TOÁN THÀNH CÔNG!';
+                document.getElementById('statusTitle').className = 'text-xs uppercase tracking-wider text-emerald-300 font-extrabold';
+                document.getElementById('statusSub').innerText = `Hệ thống đã nhận ${new Intl.NumberFormat('vi-VN').format(data.paidAmount)} ₫. Đang chuyển hướng...`;
+
+                Swal.fire({
+                    title: 'Thanh toán thành công!',
+                    text: 'SePay đã xác nhận giao dịch thành công. Đang chuyển sang trang nhận vé...',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = `/payment/success?bookingCode=${encodeURIComponent(code)}`;
+                });
+            }
+        } catch (e) {
+            console.error('Polling error:', e);
+        }
+    }
+
+    // Manual check trigger button
+    async function checkStatusOnce() {
+        const icon = document.getElementById('refreshIcon');
+        icon.classList.add('animate-spin');
+        await checkStatus(bookingCode);
+        setTimeout(() => icon.classList.remove('animate-spin'), 600);
+    }
+
+    // Copy helper
+    function copyField(elementId, label) {
+        const text = document.getElementById(elementId)?.innerText?.trim();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1800,
+                timerProgressBar: true
+            });
+            Toast.fire({
+                icon: 'success',
+                title: `Đã sao chép ${label}`
+            });
+        }).catch(() => {
+            prompt(`Sao chép ${label}:`, text);
+        });
+    }
+
+    function copyAmount() {
+        if (!currentAmount) return;
+        navigator.clipboard.writeText(String(currentAmount)).then(() => {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1800,
+                timerProgressBar: true
+            });
+            Toast.fire({
+                icon: 'success',
+                title: 'Đã sao chép số tiền'
+            });
+        }).catch(() => {
+            prompt('Sao chép số tiền:', String(currentAmount));
+        });
+    }
+
+    // DEV Mock payment button
+    document.getElementById('devMockBtn')?.addEventListener('click', async () => {
+        if (!bookingCode || !currentAmount) return;
+        
+        Swal.fire({
+            title: 'Đang giả lập SePay...',
+            text: 'Mô phỏng ngân hàng gửi webhook thanh toán',
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            const res = await fetch(`/api/dev/payments/mock?bookingCode=${encodeURIComponent(bookingCode)}&amount=${currentAmount}`, {
+                method: 'POST',
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            });
+
+            if (res.ok) {
+                await checkStatus(bookingCode);
+            } else {
+                const err = await res.json().catch(() => ({ error: 'Lỗi giả lập' }));
+                Swal.fire('Lỗi giả lập', err.error || 'Không thể tạo giao dịch thử nghiệm', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Lỗi kết nối', e.message, 'error');
+        }
+    });
+
+    // Bank modal controls
+    function showBankAppsModal() {
+        document.getElementById('bankModal').classList.remove('hidden');
+    }
+    function closeBankModal() {
+        document.getElementById('bankModal').classList.add('hidden');
+    }
+
+    // Auto initialize on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+        if (bookingCode) {
+            updatePaymentIntent(100);
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init({ duration: 800, once: true });
+</script>
+</body>
+</html>
